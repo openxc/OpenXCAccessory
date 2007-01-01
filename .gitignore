@@ -8,6 +8,7 @@ rsu.*.json
 
 **/*.pyc # In addition to the compiled Python binaries
 **/*.cur # and the .cur files
+**/*.pem # ..and any .pem keyfiles
 
 # Also all of the configuration files
 etc/wpa*
