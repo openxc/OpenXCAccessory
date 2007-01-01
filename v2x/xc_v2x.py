@@ -204,7 +204,7 @@ def main(sdebug = 0, debug = 0):
                          vi_dev.trace_raw_lock.acquire()
                          if vi_dev.fp and vi_dev.trace_enable:
                             new = vi_dev.vi_timestamp(data)
-                            vi_dev.fp.write(new)
+                            vi_dev.fp.write(new+'\n')
                          vi_dev.trace_raw_lock.release()
 
                     msleep(1)

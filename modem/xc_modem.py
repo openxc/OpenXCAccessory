@@ -106,7 +106,7 @@ def main(sdebug = 0, debug = 0):
                         vi_dev.trace_raw_lock.acquire()
                         if vi_dev.fp and vi_dev.trace_enable:
                            new = vi_dev.vi_timestamp(data)
-                           vi_dev.fp.write(new)
+                           vi_dev.fp.write(new+'\n')
                         vi_dev.trace_raw_lock.release()
                 if (config_mode == 3):
                     if (not modem_in_queue.empty()):
@@ -118,7 +118,7 @@ def main(sdebug = 0, debug = 0):
                               mb_out_queue.put(data)
                           LOG.info(data)
                           new = vi_dev.vi_timestamp(data)
-                          vi_dev.v2x_fp.write(new)
+                          vi_dev.v2x_fp.write(new+'\n')
                        vi_dev.v2x_trace_raw_lock.release()
                 else:
                     msleep(1)
