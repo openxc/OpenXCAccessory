@@ -36,7 +36,7 @@ def main(sdebug = 0, debug = 0):
     myhost = os.uname()[1]
 
 
-    LOG.info("OpenXCModem-RSU Embedded Software - Rev %s" % xc_ver.get_version())
+    LOG.info("OpenXC-RSU Embedded Software - Rev %s" % xc_ver.get_version())
 
     #---------------------------------------
     #   check the current configuration type
@@ -54,7 +54,7 @@ def main(sdebug = 0, debug = 0):
       #------------------------------
       # Create a Garage instance
       #------------------------------
-      garage1 =  ParkingGarage(myhost + "_Garage1_", 1000, -121.0, 30.0, 10)
+      garage1 =  ParkingGarage(myhost + "_Garage1 ", "Garage1", 1000, -121.0, 30.0, 10)
 
 
     #----------------------------------------
@@ -64,7 +64,9 @@ def main(sdebug = 0, debug = 0):
         if (rsu_dev.xcV2Xrsu_main()):
             while not exit_flag['rsu_2_v2x']:
                 data = garage1.get_status()
+                LOG.info("---------------------------------------------------")
                 LOG.info("send:" + data.replace("{}",""))
+                LOG.info("---------------------------------------------------")
                 if (port_dict['xcV2Xrsu_tx']['enable']):
                  xcV2Xrsu_out_queue.put(data)
                 count = 0

@@ -1,0 +1,75 @@
+#!/bin/bash
+
+set +x
+
+openxc_dir="/root/OpenXCAccessory"
+backup_dir="/root/config_backup"
+
+# If the directory doesn't exist or is empty then we have a problem and cannot restore
+if [ ! -d $backup_dir ] || [ ! "$(ls -A $backup_dir)" ]; then
+	echo "Error: $backup_dir either does not exist or is empty.  Exiting..."
+	exit
+fi
+
+wpa_resp=false
+cfg_resp=false
+
+# Determine which files the user wants to load
+echo -n "Do you want to restore (a)ll config files, only (S)ome of them, or (q)uit? Default is all: "
+read first_resp
+
+if [ $first_resp = 'S' ]; then
+	echo -n "Do you want to restore wpa_supplicant files (Y/n)? "
+	read second_resp
+	if [ $second_resp = 'Y' ]; then
+		wpa_resp=true
+	fi
+	echo -n "Do you want to restore boardid, topology, and xc.conf (Y/n)? "
+	read second_resp
+	if [ $second_resp = 'Y' ]; then
+		cfg_resp=true
+	fi
+elif [ $first_resp = 'q' ]; then
+	echo "Exiting..."
+	exit
+else
+	# Since the default case is "all" (usually what the user will want to do)
+	wpa_resp=true
+	cfg_resp=true
+fi
+
+common_files="xc.conf .xcmodem_boardid xcmodem_topology"
+etc_files="wpa_supplicant_modem.conf wpa_supplicant_rsu.conf wpa_supplicant_v2x.conf wpa_supplicant_v2x_top2.conf"
+
+# Put the files in their respective directories and instruct git to ignore them so users don't accidentally submit them with their pushes and mess stuff up
+if $cfg_resp ; then
+	for file in $common_files
+	do
+		if [ -e $backup_dir/$file.bak ]; then
+			cp -p $backup_dir/$file.bak $openxc_dir/common/$file
+			git update-index --assume-unchanged $openxc_dir/common/$file
+		else
+			# If an individual file does not exist in the backup there isn't much we can do but let the user know and move on
+			echo "$file.bak does not exist in the backup directory! Will continue loading other files.."
+		fi
+	done
+	echo "Config files (boardid, topology, and xc.conf) loaded"
+fi
+
+# Once more, with feeling!
+if $wpa_resp ; then
+	for file in $etc_files
+	do
+        	if [ -e $backup_dir/$file.bak ]; then
+                	cp -p $backup_dir/$file.bak $openxc_dir/etc/$file
+                	git update-index --assume-unchanged $openxc_dir/etc/$file
+        	else
+                	echo "$file.bak does not exist in the backup directory! Will continue loading other files..."
+        	fi
+	done
+	echo "Supplicant files loaded"
+fi
+
+echo "Load completed!"
+
+exit

@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set +x
+
+openxc_dir="/root/OpenXCAccessory"
+backup_dir="/root/config_backup"
+
+# Since we only save one config backup if a new one is to be saved the older one will be lost
+if [ -d $backup_dir ] && [ "$(ls -A $backup_dir)" ]; then
+	last_save_date="$(cat $backup_dir/last_save)"
+	echo -n "A backup from $last_save_date already exists, overwrite (Y/n)?"
+	read overwrite
+	if [ ! $overwrite = 'Y' ]; then
+		echo "Aborting..."
+		exit
+	fi
+fi
+
+mkdir -p $backup_dir
+
+common_files="xc.conf .xcmodem_boardid xcmodem_topology"
+etc_files="wpa_supplicant_modem.conf wpa_supplicant_rsu.conf wpa_supplicant_v2x.conf wpa_supplicant_v2x_top2.conf"
+
+# Files to be backed up are located in the etc and common directories
+for file in $common_files
+do
+	cp -p $openxc_dir/common/$file $backup_dir/$file.bak
+done
+
+for file in $etc_files
+do
+	cp -p $openxc_dir/etc/$file $backup_dir/$file.bak
+done
+
+# Store the current date into a file in the backup directory to help the user determine if a backup is likely still relevant
+echo $(date) > $backup_dir/last_save
+echo "Configuration backed up to $backup_dir and timestamp recorded!"
+
+exit

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set +x
+
+if [ $# -ne 2 ]; then
+	echo "Usage: init_openxc <Device type: v2x, rsu, modem> <Topology 1,2,3>"
+fi
+
+openxc_dir="/root/OpenXCAccessory"
+
+# Start by setting --assume-unchanged on all of the config files so they will not accidentally be pushed to the server by the user
+common_files="xc.conf .xcmodem_boardid xcmodem_topology"
+for file in $common_files
+do
+	git update-index --assume-unchanged $openxc_dir/common/$file
+done
+
+etc_files="$(ls $openxc_dir/etc/wpa*)"
+for file in $etc_files
+do
+	git update-index --assume-unchanged $file
+done
+
+# Set boardid file contents based on the type of hardware the script is being executed on (the user must pass the type when they run this script)
+boardid_loc=$openxc_dir/common/.xcmodem_boardid
+case "${1}" in
+	"v2x") echo "2" > $boardid_loc
+	;;
+	"rsu") echo "3" > $boardid_loc
+	;;
+	"modem") echo "1" > $boardid_loc
+	;;
+	*) echo "Error: Unrecognized device type!"
+	exit
+	;;
+esac
+
+# Set topology (again, user must pass this in as an argument)
+topology_loc=$openxc_dir/common/xcmodem_topology
+if [ $2 -gt 0 ] && [ $2 -lt 4 ]; then
+	echo $2 > $topology_loc
+else
+	echo "Error: Invalid topology type!  Topologies must be in range 1-3"
+	exit
+fi
+
+# Settings need to be changed to reflect changes to boardid so a reboot is needed to complete the process
+echo -n "You must reboot for these changes to take effect, reboot now (Y/n)? "
+read reboot_choice
+
+if [ "${reboot_choice}" = 'Y' ]; then
+	echo "Device will reboot in 3 seconds"
+	sleep 3
+	reboot
+	exit
+fi
+echo "Reboot skipped.  Exiting..."
+exit

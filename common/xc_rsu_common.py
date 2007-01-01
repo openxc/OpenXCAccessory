@@ -1,4 +1,4 @@
-MODEM_DATA_TRACE_PREFIX = '/mnt/data/trace_raw'
+MODEM_SSD_TRACE_PREFIX = '/mnt/ssd/trace_raw'
 
 # $Rev:: 265           $
 # $Author:: mlgantra   $
@@ -36,13 +36,13 @@ XCMODEM_XCV2XRSU_TRACE_RAW_FILE = 'xcV2Xrsu_trace_raw.json'
 XCMODEM_XCV2XRSU_TRACE_RAW_BK_FILE = 'xcV2Xrsu_trace_raw_bk.json'
 XCMODEM_XCV2XRSU_TRACE_FILE = 'xcV2Xrsu_trace.json'
 
-XCMODEM_DATA_MOUNT = '/mnt/data'
-XCMODEM_DATA_DEVICE = '/dev/mmcblk0'
-XCMODEM_DATA_PARTITION = 'mmcblk0p2'
-XCMODEM_DATA_TRACE_PREFIX = '/mnt/data/trace_raw'
+XCMODEM_SSD_MOUNT = '/mnt/ssd'
+XCMODEM_SSD_DEVICE = '/dev/mmcblk0'
+XCMODEM_SSD_PARTITION = 'mmcblk0p2'
+XCMODEM_SSD_TRACE_PREFIX = '/mnt/ssd/trace_raw'
 
-XCMODEM_DATA_V2X_TRACE_PREFIX = '/mnt/data/v2x_trace_raw'
-XCMODEM_DATA_TRACE_SUFFIX = 'json'
+XCMODEM_SSD_V2X_TRACE_PREFIX = '/mnt/ssd/v2x_trace_raw'
+XCMODEM_SSD_TRACE_SUFFIX = 'json'
 
 
 UPLOAD_TIMEOUT_FACTOR = 0.05            # in=7K/s out=140K/s
@@ -161,7 +161,7 @@ class xcV2Xrsu:
         state = state_list[status & CHARGE_MASK]
         if modem_state['charger'] != state:
             modem_state['charger'] = state
-            LOG.info("charger state %s" % modem_state['charger'])
+            #LOG.info("charger state %s" % modem_state['charger'])
 
         if fault != self.charger_fault:
             LOG.info("Charger Fault Register: x%X -> x%X" % (self.charger_fault, fault))
@@ -513,7 +513,7 @@ class xcV2Xrsu:
         while (fnum > 0) :
             if self.sd_space < bfsize:
                 # remove file to make space
-                fname = "%s_%s.%s" % (XCMODEM_DATA_TRACE_PREFIX, fnum, XCMODEM_DATA_TRACE_SUFFIX)
+                fname = "%s_%s.%s" % (XCMODEM_SSD_TRACE_PREFIX, fnum, XCMODEM_SSD_TRACE_SUFFIX)
                 if conf_options['openxc_vi_trace_backup_overwrite_enable']:
                     if os.path.exists(fname):
                         fsize = os.path.getsize(fname)
@@ -530,14 +530,14 @@ class xcV2Xrsu:
         fnum = int(conf_options['openxc_vi_trace_number_of_backup'])
         while (fnum > 0):
             if v2x_flag:
-             fname1 = "%s_%s.%s" % (XCMODEM_DATA_V2X_TRACE_PREFIX, fnum, XCMODEM_DATA_TRACE_SUFFIX)
+             fname1 = "%s_%s.%s" % (XCMODEM_SSD_V2X_TRACE_PREFIX, fnum, XCMODEM_SSD_TRACE_SUFFIX)
             else:
-             fname1 = "%s_%s.%s" % (XCMODEM_DATA_TRACE_PREFIX, fnum, XCMODEM_DATA_TRACE_SUFFIX)
+             fname1 = "%s_%s.%s" % (XCMODEM_SSD_TRACE_PREFIX, fnum, XCMODEM_SSD_TRACE_SUFFIX)
             fnum -= 1
             if v2x_flag:
-             fname2 = "%s_%s.%s" % (XCMODEM_DATA_V2X_TRACE_PREFIX, fnum, XCMODEM_DATA_TRACE_SUFFIX)
+             fname2 = "%s_%s.%s" % (XCMODEM_SSD_V2X_TRACE_PREFIX, fnum, XCMODEM_SSD_TRACE_SUFFIX)
             else:
-             fname2 = "%s_%s.%s" % (XCMODEM_DATA_TRACE_PREFIX, fnum, XCMODEM_DATA_TRACE_SUFFIX)
+             fname2 = "%s_%s.%s" % (XCMODEM_SSD_TRACE_PREFIX, fnum, XCMODEM_SSD_TRACE_SUFFIX)
             if os.path.exists(fname2):
                 if os.path.exists(fname1):         # gain space
                      self.sd_space += os.path.getsize(fname1)
@@ -545,9 +545,9 @@ class xcV2Xrsu:
                 os.rename(fname2, fname1)
         # backup recent raw file
         if v2x_flag:
-          fname = "%s_1.%s" % (XCMODEM_DATA_V2X_TRACE_PREFIX, XCMODEM_DATA_TRACE_SUFFIX)
+          fname = "%s_1.%s" % (XCMODEM_SSD_V2X_TRACE_PREFIX, XCMODEM_SSD_TRACE_SUFFIX)
         else:
-          fname = "%s_1.%s" % (XCMODEM_DATA_TRACE_PREFIX, XCMODEM_DATA_TRACE_SUFFIX)
+          fname = "%s_1.%s" % (XCMODEM_SSD_TRACE_PREFIX, XCMODEM_SSD_TRACE_SUFFIX)
         cmd = "cp -p %s %s" % (bfname, fname)
         #LOG.debug("issuing '%s' " % cmd)
         if subprocess.call(cmd, shell=True):
@@ -572,17 +572,17 @@ class xcV2Xrsu:
                      mount /dev/%s %s; \
                    else \
                      exit 1; \
-                   fi" % (XCMODEM_DATA_DEVICE, XCMODEM_DATA_PARTITION, \
-                          XCMODEM_DATA_MOUNT, \
-                          XCMODEM_DATA_MOUNT, \
-                          XCMODEM_DATA_MOUNT, \
-                          XCMODEM_DATA_PARTITION, XCMODEM_DATA_MOUNT)
+                   fi" % (XCMODEM_SSD_DEVICE, XCMODEM_SSD_PARTITION, \
+                          XCMODEM_SSD_MOUNT, \
+                          XCMODEM_SSD_MOUNT, \
+                          XCMODEM_SSD_MOUNT, \
+                          XCMODEM_SSD_PARTITION, XCMODEM_SSD_MOUNT)
             # LOG.debug("issuing '%s'" % cmd)
             if subprocess.call(cmd, shell=True):
-                LOG.error("fail to prepare %s - skip SD backup" % XCMODEM_DATA_MOUNT)
+                LOG.error("fail to prepare %s - skip SD backup" % XCMODEM_SSD_MOUNT)
                 conf_options['openxc_vi_trace_number_of_backup'] = 0    # Turn off SD backup
             else:
-                cmd = "df -BK %s | tail -1 | awk '{print $4}' | awk -FK '{print $1}'" % XCMODEM_DATA_MOUNT
+                cmd = "df -BK %s | tail -1 | awk '{print $4}' | awk -FK '{print $1}'" % XCMODEM_SSD_MOUNT
                 # LOG.debug("issuing '%s'" % cmd)
                 self.sd_space = int(subprocess.check_output(cmd, shell=True).split()[0]) * 1024
 

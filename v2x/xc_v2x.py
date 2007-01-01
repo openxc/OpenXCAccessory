@@ -21,7 +21,7 @@ from xc_rsu_common import *
 import xc_ver
 
 logging.basicConfig(level=logging.DEBUG)
-LOG = logging.getLogger('xcmodem')
+LOG = logging.getLogger('xcv2x')
 
 try: 
     import bluetooth
@@ -41,9 +41,10 @@ def main(sdebug = 0, debug = 0):
     tdata = ""
     sdata = ""
     count = 0
+    adv_count = 0
 
 
-    LOG.info("OpenXCModem Embedded Software - Rev %s" % xc_ver.get_version())
+    LOG.info("OpenXC-V2X Embedded Software - Rev %s" % xc_ver.get_version())
 
     myhost = os.uname()[1]
     LOG.info(myhost)
@@ -130,15 +131,17 @@ def main(sdebug = 0, debug = 0):
                   if ((config_mode == 2) or (config_mode == 3)):
                     if (not xcV2Xrsu_in_queue.empty()):
                       sdata = sdata + xcV2Xrsu_in_queue.get().replace("{}","") 
-     
+    
                       if (len(sdata) > 200): 
                        #LOG.info("[" + sdata + "]")
                        xcV2Xrsu_data = cleanup_json(sdata)
-                       #if (config_mode == 2):
-                        #xcV2Xrsu_data = filter_msg(xcV2Xrsu_data,myhost)
+                       if (config_mode == 2):
+                        xcV2Xrsu_data = filter_msg(xcV2Xrsu_data,myhost)
                        sdata = ""
                        if (len(xcV2Xrsu_data) >  0):
+                         LOG.info("-------------------------------------") 
                          LOG.info("Recd data [[ %s ]]" % xcV2Xrsu_data)
+                         LOG.info("-------------------------------------")
                          #--------------------
                          # write to mobile device if operational 
                          #--------------------
@@ -159,7 +162,7 @@ def main(sdebug = 0, debug = 0):
                          if xcV2Xrsu_dev.trace_enable:
                           if xcV2Xrsu_dev.fp:
                             new_xcV2Xrsu_data = xcV2Xrsu_dev.xcV2Xrsu_timestamp(xcV2Xrsu_data)
-                            #LOG.info("Recd data [[ %s ]]" % xcV2Xrsu_data)
+                            LOG.info("Recd data [[ %s ]]" % xcV2Xrsu_data)
                             xcV2Xrsu_dev.fp.write(new_xcV2Xrsu_data)
                             sdata = ""
                           else:
@@ -168,8 +171,14 @@ def main(sdebug = 0, debug = 0):
 
                     if (count == msg_count): 
                        count = 0 
+	      	       adv_count += 1
                        v_msg = vid_msg.replace("vehicle_id", myhost);
+                       v_msg = v_msg.replace("Connected", str(adv_count));
+                       LOG.info ("----------------------------------------")
+                       LOG.info ("Transmitting :  [[ %s ]]" % v_msg) 
+                       LOG.info ("----------------------------------------")
                        xcV2Xrsu_out_queue.put(v_msg);
+
 
 		    msleep(1)
                     #-------------------------------
