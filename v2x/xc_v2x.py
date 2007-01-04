@@ -43,18 +43,20 @@ def main(sdebug = 0, debug = 0):
     count = 0
     adv_count = 0
 
+    #------------------------------------------------------------
+    # update openxc_vi_enable to current setting in xc.conf file
+    #------------------------------------------------------------
 
     LOG.info("OpenXC-V2X Embedded Software - Rev %s" % xc_ver.get_version())
 
     myhost = os.uname()[1]
     LOG.info(myhost)
 
-    #---------------------------------------
-    #   Clean up Mobile App Queue
-    #---------------------------------------
+    #---------------------------------------#
+    #   Clean up Mobile App Queue           #
+    #---------------------------------------#
     if (not mb_out_queue.empty()):
         dump=mb_out_queue.get()
-
 
     #---------------------------------------
     #   check the current configuration type
@@ -67,19 +69,24 @@ def main(sdebug = 0, debug = 0):
     pairing_registration()
     vi_cleanup()
     vi_dev = xcModemVi(port_dict['vi_app']['port'], vi_in_queue, vi_out_queue, sdebug, debug)
-
+    vi_dev.file_discovery('xc.conf')     
+    LOG.info("OPENXC_VI_ENABLE= %d" % conf_options['openxc_vi_enable']) 
+    
+	#------------------------------
+    #   ensure that  VI is running
     #------------------------------
-    # ensure that  VI is running
-    #------------------------------
-    vi_status = vi_dev.vi_main(); 
-    while ( not vi_status)and (attempt < MAX_BRING_UP_ATTEMPT):
-       time.sleep(float(conf_options['openxc_vi_discovery_interval']))
-       attempt += 1
-       vi_status = vi_dev.vi_main() 
-
-    if (not vi_status):
-      LOG.debug("vi_app max out %d attempts" % MAX_BRING_UP_ATTEMPT)
-      sys.exit()
+    if (conf_options['openxc_vi_enable'] == 1) or (config_mode == 3):  
+      vi_status = vi_dev.vi_main(); 
+      while ( not vi_status)and (attempt < MAX_BRING_UP_ATTEMPT):
+         time.sleep(float(conf_options['openxc_vi_discovery_interval']))
+         attempt += 1
+         vi_status = vi_dev.vi_main() 
+    if (conf_options['openxc_vi_enable'] == 1) or (config_mode == 3):
+      if (not vi_status):
+        LOG.debug("vi_app max out %d attempts" % MAX_BRING_UP_ATTEMPT)
+        sys.exit()
+    else:
+	vi_status = 0
 
     #---------------------------------------
     # RSU integration if mode = 2 or 3
@@ -104,9 +111,8 @@ def main(sdebug = 0, debug = 0):
     #----------------------------------------------------------
     # Main Loop. Run if Both the VI and RSU (if needed are up)
     #----------------------------------------------------------
-
     while True:
-        if (vi_status):
+        if (vi_status) or (conf_options['openxc_vi_enable'] == 0):
             if first:
                 first = 0
                 LOG.info("App Tasks ...")
@@ -121,7 +127,6 @@ def main(sdebug = 0, debug = 0):
                        thread.start()
                        threads.append(thread)
 
-
             while (not exit_flag['vi_app']) :
                   count = count + 1
                   #-------------------------------
@@ -133,7 +138,6 @@ def main(sdebug = 0, debug = 0):
                       sdata = sdata + xcV2Xrsu_in_queue.get().replace("{}","").strip(chr(0))     
 
                       if (len(sdata) > 200):
-                       #LOG.info("[" + sdata + "]")
                        xcV2Xrsu_data = cleanup_json(sdata)
                        if (config_mode == 2):
                         xcV2Xrsu_data = filter_msg(xcV2Xrsu_data,myhost)
@@ -147,12 +151,11 @@ def main(sdebug = 0, debug = 0):
                          #--------------------
                          if modem_state['mb_app'] == app_state.OPERATION:
                             if ((not vi_bypass['mb_app']) and (mb_status['ready'])):
-                            #if not vi_bypass['mb_app']:
                                mb_out_queue.put(xcV2Xrsu_data)
                          #--------------------
                          # write to modem device if operational 
                          #--------------------
-                         if (config_mode == 3) and (modem_state['vi_app'] == app_state.OPERATION):
+                         if (conf_options['openxc_vi_enable']) or (config_mode == 3):
                           if not vi_bypass['modem_app']:
                              vi_out_queue.put(xcV2Xrsu_data)
                          #--------------------
@@ -162,7 +165,6 @@ def main(sdebug = 0, debug = 0):
                          if xcV2Xrsu_dev.trace_enable:
                           if xcV2Xrsu_dev.fp:
                             new_xcV2Xrsu_data = xcV2Xrsu_dev.xcV2Xrsu_timestamp(xcV2Xrsu_data)
-                            #LOG.info("Recd data [[ %s ]]" % xcV2Xrsu_data)
                             xcV2Xrsu_dev.fp.write(new_xcV2Xrsu_data)
                             sdata = ""
                           else:
@@ -179,49 +181,47 @@ def main(sdebug = 0, debug = 0):
                        LOG.info ("----------------------------------------")
                        xcV2Xrsu_out_queue.put(v_msg);
 
-
 		    msleep(1)
-                    #-------------------------------
-                    # continue with the vi then
-                    #-------------------------------
-                  if not vi_in_queue.empty():
-                    tdata = tdata + vi_in_queue.get() 
-                    #LOG.info("Length of tdata = %d" % len(tdata))
-                    if (len(tdata) > 200): 
-                      #LOG.info(tdata)
-                      data = cleanup_json(tdata)
-                      tdata = ""
-                      if not data is None:
-                         #----------------------------------
-                         # Send the VI data to mobile app is enabled 
-                         # and the interface is operational
-                         #----------------------------------
-                         if modem_state['mb_app'] == app_state.OPERATION:
-                            if ((not vi_bypass['mb_app']) and (mb_status['ready'])):
-                               mb_out_queue.put(data)
+          #-------------------------------
+          # continue with the vi then
+          #-------------------------------
+		  if (conf_options['openxc_vi_enable']) or (config_mode == 3):
+                    if not vi_in_queue.empty():
+                      tdata = tdata + vi_in_queue.get() 
+                      if (len(tdata) > 200): 
+                        data = cleanup_json(tdata)
+                        tdata = ""
+                        if not data is None:
+                           #----------------------------------
+                           # Send the VI data to mobile app is enabled 
+                           # and the interface is operational
+                           #----------------------------------
+                           if modem_state['mb_app'] == app_state.OPERATION:
+                              if ((not vi_bypass['mb_app']) and (mb_status['ready'])):
+                                 mb_out_queue.put(data)
+                           #----------------------------------
+                           #Send the VI data to xcV2Xrsu if enabled
+                           #----------------------------------
+                           if (modem_state['xcV2Xrsu'] == app_state.OPERATION):
+                              if ((port_dict['xcV2Xrsu']['enable']) and (not vi_bypass['xcV2Xrsu_app'])):
+                                   xcV2Xrsu_out_queue.put(data)
+								   
+                           #----------------------------------
+                           # and dump to trace file
+                           #----------------------------------
+                           vi_dev.trace_raw_lock.acquire()
+                           if vi_dev.fp and vi_dev.trace_enable:
+                              new = vi_dev.vi_timestamp(data)
+                              vi_dev.fp.write(new+'\n')
+                           vi_dev.trace_raw_lock.release()
 
-                         #----------------------------------
-                         #Send the VI data to xcV2Xrsu if enabled
-                         #----------------------------------
-                         if (modem_state['xcV2Xrsu'] == app_state.OPERATION):
-                            if ((port_dict['xcV2Xrsu']['enable']) and (not vi_bypass['xcV2Xrsu_app'])):
-                                 xcV2Xrsu_out_queue.put(data)
-
-                         #----------------------------------
-                         # and dump to trace file
-                         #----------------------------------
-                         vi_dev.trace_raw_lock.acquire()
-                         if vi_dev.fp and vi_dev.trace_enable:
-                            new = vi_dev.vi_timestamp(data)
-                            vi_dev.fp.write(new+'\n')
-                         vi_dev.trace_raw_lock.release()
-
-                    msleep(1)
-
-        modem_state['vi_app'] = vi_state.LOST
-        vi_dev.lost_cnt += 1
-        LOG.info("vi_app state %s %d time" % (modem_state['vi_app'], vi_dev.lost_cnt))
-        vi_dev.vi_exit()
+                      msleep(1)
+					  
+	if (conf_options['openxc_vi_enable']):
+          modem_state['vi_app'] = vi_state.LOST
+          vi_dev.lost_cnt += 1
+          LOG.info("vi_app state %s %d time" % (modem_state['vi_app'], vi_dev.lost_cnt))
+          vi_dev.vi_exit()
 
 
         if exit_flag['all_app']:

@@ -783,7 +783,6 @@ class xcModemVi:
 
 
     def web_upload(self, bfname, fname):
-
         if not os.path.exists(bfname):
             LOG.debug("No trace yet to be uploaded") 
             return
@@ -1032,7 +1031,6 @@ class xcModemVi:
         state = state_list[status & CHARGE_MASK]
         if modem_state['charger'] != state:
             modem_state['charger'] = state
-            #AK13-LOG.info("charger state %s" % modem_state['charger'])
 
         if fault != self.charger_fault:
             LOG.info("Charger Fault Register: x%X -> x%X" % (self.charger_fault, fault))
@@ -1161,7 +1159,8 @@ class xcModemVi:
          if (modem_state[self.name] != vi_state.MODEM_CONNECTED):
                 LOG.info("Modem not connected ....")
                 return 0
-        else:
+   
+        if (conf_options['openxc_vi_enable']):
          attempt =1
          LOG.info("Enering VI discovery")
          while (attempt <= MAX_DISCOVERY_ATTEMPT):
@@ -1195,23 +1194,28 @@ class xcModemVi:
                     LOG.info("VI not connected ....")
                     #return 0
 
-        if (modem_state[self.name] == vi_state.CONNECTED) or (modem_state[self.name] == vi_state.MODEM_CONNECTED):
+	LOG.info("XC_VI.PY main IF is %s" %(modem_state[self.name] == vi_state.CONNECTED) or (modem_state[self.name] == vi_state.MODEM_CONNECTED))
+
+
+        if ((conf_options['openxc_vi_enable']==0) and (boardmode_inquiry()==3)) or (modem_state[self.name] == vi_state.CONNECTED) or (modem_state[self.name] == vi_state.MODEM_CONNECTED):
             #-------------------------------------------------------
             # create usb threads if VI is connected through usb
             #-------------------------------------------------------
             if self.usb is not None:
                 thread1 = usbRecvThread("%s-Recv" % self.name, self.usb, self.inQ, self.name)
                 thread2 = usbSendThread("%s-Send" % self.name, self.usb, self.outQ, self.name)
-            else: # connect through Bluotooth socket
+            if (conf_options['openxc_vi_enable']): # connect through Bluotooth socket
                 # OXM-65 - Use Socket Recv timeout to indicate xfer stop after BT Frame failure
+   	            LOG.info("TRYING TO CONNECT VIA BT in xc_vi.py")
                 thread1 = sockRecvThread("%s-Recv" % self.name, self.socket, self.inQ, self.name, sflag = 1)
-                thread2 = sockSendThread("%s-Send" % self.name, self.socket, self.outQ, self.name)
-            # start threads
-            thread1.start()
-            thread2.start()
+				thread2 = sockSendThread("%s-Send" % self.name, self.socket, self.outQ, self.name)
+				
+				# start thread
+                thread1.start()
+				thread2.start()
 
-            self.threads.append(thread1)
-            self.threads.append(thread2)
+                self.threads.append(thread1)
+				self.threads.append(thread2)
 
             #--------------------------------------------------
             # prepare SD card back up is more than one backup is desired
@@ -1219,19 +1223,19 @@ class xcModemVi:
             if conf_options['openxc_vi_trace_number_of_backup']:
                 self.trace_sd_backup_prep()
 
-            
-            #---------------------------------------------------
-            # invoke stop_xxx.set() to stop the task if needed
-            # start trace task asap
-            #---------------------------------------------------
-            LOG.info("*****************************")
-            LOG.info("Starting VI Trace Log deamon")
-            LOG.info("*****************************")
-            thread3, self.stop_trace = loop_timer(float(conf_options['openxc_vi_trace_idle_duration']), \
-                                         self.trace_start, \
-                                         float(conf_options['openxc_vi_trace_snapshot_duration']), \
-                                         XCMODEM_TRACE_RAW_FILE, XCMODEM_TRACE_RAW_BK_FILE)
-            self.threads.append(thread3)
+            if (conf_options['openxc_vi_enable']):
+              #---------------------------------------------------
+              # invoke stop_xxx.set() to stop the task if needed
+              # start trace task asap
+              #---------------------------------------------------
+              LOG.info("*****************************")
+              LOG.info("Starting VI Trace Log deamon")
+              LOG.info("*****************************")
+              thread3, self.stop_trace = loop_timer(float(conf_options['openxc_vi_trace_idle_duration']), \
+                                           self.trace_start, \
+                                           float(conf_options['openxc_vi_trace_snapshot_duration']), \
+                                           XCMODEM_TRACE_RAW_FILE, XCMODEM_TRACE_RAW_BK_FILE)
+              self.threads.append(thread3)
 
             #---------------------------------------------------
             # start v2x trace 
@@ -1252,10 +1256,11 @@ class xcModemVi:
             if conf_options['web_scp_vi_trace_upload_enable']:
               #if (not ((board_id == 2) and ((self.config_mode == 4) or (self.config_mode == 5)))):
               if (not ((self.board_id == 2) and (self.config_mode == 3))):
-                thread4, self.stop_web_upload = loop_timer(float(conf_options['web_scp_vi_trace_upload_interval']), \
-                                                  self.web_upload, \
-                                                  XCMODEM_TRACE_RAW_BK_FILE, XCMODEM_TRACE_FILE) 
-                self.threads.append(thread4)
+                if (conf_options['openxc_vi_enable']):
+		  thread4, self.stop_web_upload = loop_timer(float(conf_options['web_scp_vi_trace_upload_interval']), \
+                                                    self.web_upload, \
+                                                    XCMODEM_TRACE_RAW_BK_FILE, XCMODEM_TRACE_FILE) 
+                  self.threads.append(thread4)
                 thread4_1, self.stop_web_v2x_upload = loop_timer(float(conf_options['web_scp_vi_trace_upload_interval']), \
                                                   self.web_v2x_upload, \
                                                  #XCMODEM_TRACE_RAW_BK_FILE, XCMODEM_TRACE_FILE) 
@@ -1333,7 +1338,7 @@ if __name__ == '__main__':
         time.sleep(float(conf_options['openxc_vi_discovery_interval']))
         attempt += 1
         if (attempt > MAX_BRING_UP_ATTEMPT):
-            LOG.debug("vi_app max out %d attempts" % MAX_BRING_UP_ATTEMPT)
+            LOG.debug("vi_app max out %d attempts in xc_vi.py" % MAX_BRING_UP_ATTEMPT)
             break;
             
 
