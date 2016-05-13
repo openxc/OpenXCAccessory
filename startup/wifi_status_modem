@@ -1,0 +1,45 @@
+#!/bin/bash
+# $Rev: 430 $
+
+set +x
+
+sleep 30
+
+dhcp_release_renew() {
+	dhclient -r wlan0
+	dhclient wlan0
+	sleep 10
+}
+
+while true
+do
+	wlan0_search=`cat /proc/net/dev | grep wlan0 | wc -l`
+	
+	if [ $wlan0_search -eq 1 ]; then
+		# CHECK FOR IP ADDRESS
+		ip_addr=`ifconfig wlan0 2>/dev/null | grep -m 1 inet\ addr | wc -l`
+		
+		# CHECK IF WIFI CONNECTED 
+		wifi_connected=`iw wlan0 link 2>/dev/null | grep Connected | wc -l`
+        	
+		# CHECK IF WIFI IS CONNECTED BUT HAS NO IP ADDRESS
+		#inet_6=`ifconfig wlan0 2>/dev/null | grep -m 1 inet6\ addr: | wc -l`
+
+		if [ $wifi_connected -eq 1 -a $ip_addr -eq 1 ]; then
+			check_ip=$(ip -f inet addr show dev wlan0 | sed -n 's/^ *inet *\([.0-9]*\).*/\1/p' | sed 's/\.[0-9]*$/.*/')
+			last_ip_octate=$(ip -o addr show dev wlan0 | awk '$3 == "inet" {print $4}' | sed -r 's!/.*!!; s!.*\.!!')
+			exclude_ip=$(ip -f inet addr show dev wlan0 | sed -n 's/^ *inet *\([.0-9]*\).*/\1/p' | sed 's/\.[0-9]*$/./')
+			final_exclude_ip=$exclude_ip$last_ip_octate
+			chk_host_up=`nmap -sP -T5 $check_ip --exclude $final_exclude_ip | grep -m 1 "Host is up" | wc -l`
+			if [ $chk_host_up -ne 1 ]; then
+				dhcp_release_renew
+			fi
+		else
+			dhcp_release_renew
+		fi
+	#else
+		#echo "===>>> Reboot system in 10 seconds. Missing WLAN0 interface."
+		#sleep 10
+		#shutdown -r now
+	fi
+done

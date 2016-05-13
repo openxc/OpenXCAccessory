@@ -1,0 +1,51 @@
+#!/bin/bash
+# $Rev: 349 $
+
+echo 1   > /sys/class/gpio/export    # BT_EN
+echo out > /sys/class/gpio/pioA1/direction
+echo 1   > /sys/class/gpio/pioA1/value
+echo "BT Enabled"
+echo 8 > /sys/class/gpio/export      # USB_ID
+echo 14 > /sys/class/gpio/export     # USB_VBUS_ON
+echo 12 > /sys/class/gpio/export     # P12_DET
+
+if [ -e /root/OpenXCAccessory/common/.xcmodem_boardid ]; then
+  id=`cat /root/OpenXCAccessory/common/.xcmodem_boardid`
+  if [ "$id" -ge "1" ]; then 
+    echo "Charger Config"
+    /root/OpenXCAccessory/startup/charger_config.py
+  fi
+fi
+
+# assume that vi usb has been connected before booting up,
+# determine if it has external power
+viusb="/tmp/viusb"
+if [ ! -e $viusb ]; then
+  lsusb | grep "1bc4:0001"
+  if [ "$?" -eq 0 ]; then
+    echo 1 > $viusb
+  else
+    echo 0 > $viusb
+  fi
+fi
+
+# invoke USB OTG
+/root/OpenXCAccessory/startup/usbotg.sh &
+
+# in-case vi usb doesn't have external power
+# then wait for modem to provide the power and usb initialization completion
+if [ "$(cat $viusb)" = 0 ]; then
+  sleep 10
+fi
+
+# invoke Wi-Fi LED
+/root/OpenXCAccessory/startup/wifiled.sh &
+
+# invoke Wi-Fi Status
+/root/OpenXCAccessory/startup/wifistatus.sh &
+
+# check USB for Telit or Cohda and change id
+lsusb | grep "1bc7:0021"
+if [ "$?" -eq 0 ]; then
+	echo 1 > /root/OpenXCAccessory/common/.xcmodem_boardid
+fi

@@ -1,0 +1,10 @@
+TARGETS = udhcpd bluetooth plymouth urandom sendsigs rsyslog umountnfs.sh hwclock.sh networking umountfs umountroot halt reboot
+sendsigs: bluetooth plymouth udhcpd
+rsyslog: sendsigs bluetooth udhcpd
+umountnfs.sh: rsyslog bluetooth plymouth sendsigs udhcpd
+hwclock.sh: rsyslog
+networking: umountnfs.sh
+umountfs: hwclock.sh bluetooth plymouth urandom udhcpd umountnfs.sh networking
+umountroot: umountfs
+halt: umountroot
+reboot: umountroot

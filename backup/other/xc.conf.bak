@@ -1,0 +1,230 @@
+# $Rev:: 379           $
+# $Author:: mlgantra   $
+# $Date:: 2015-06-19 1#$
+#
+# openXCAccessory Device configuration file sample
+
+# Note:
+#   web_scp_userid and web_scp_pem are requirements for WEB access
+#
+
+# openxc_vi_mac MAC Address XX:XX:XX:XX:XX:XX or None
+# openxc_vi_mac    None
+#openxc_vi_mac 00:06:66:69:8A:19
+#openxc_vi_mac 00:06:66:6E:67:1D
+#openxc_vi_mac 00:06:66:69:89:89
+#openxc_vi_mac 00:06:66:6F:A7:8A
+openxc_vi_mac  00:06:66:6F:AB:8E
+
+# Vehicle Interface - on/off by default for modem/v2x board
+openxc_vi_enable 1
+
+
+# V2X-MD interface - on/off by default for modem/v2x board
+openxc_md_enable 1
+
+
+# --- For trace recording information
+# Vehicle data stream trace recording snapshot duration (in seconds)
+openxc_vi_trace_snapshot_duration 10
+
+
+# Idle duration between subsequent Vehicle data trace recording snapshot (in seconds)
+openxc_vi_trace_idle_duration 30
+
+
+# Vehicle data trace snapshot truncate size (in bytes - 0 means NO truncate by default)
+# openxc_vi_trace_truncate_size 0
+
+
+# Vehicle data trace filtering executable script (None by default)
+# The script is required to accept stream stdin input and generate stdout output
+# For example, sample executable shell script for egrep patterns:
+#   #!/bin/bash
+#   egrep "transmission|ignition"
+# openxc_vi_trace_filter_script None 
+
+
+# Number of vehicle data trace will be backed up in provided formatted SD card 
+#   where O means no backed up is needed by default
+# Raw vehicle trace snapshot will be saved as /mnt/ssd/trace_raw_<no>.json
+#   where /mnt/ssd if mounted to the first partition
+openxc_vi_trace_number_of_backup  3
+
+
+# Enabling to overwrite backup file when the SD disk is full (on by default)
+openxc_vi_trace_backup_overwrite_enable 1
+
+
+# --- Remote Web server 
+# Web update/upload protocal using SCP 
+
+
+# Remote server scp userid: 
+web_scp_userid  ubuntu
+
+# Remote server(Modem) scp userid for V2X in Topology 3:
+v2x_lan_scp_userid  root
+
+# Remote server SSL Enscripted Private key PEM  
+web_scp_pem     xc_scp.pem
+
+
+# Remote server Access Point Name: 
+web_scp_apn     apn
+
+
+# Enabling congifuration file download from remote server (off by default)
+web_scp_config_download_enable 0
+
+
+# Configuration file URL on the remote server (<IP>:[<directory>/]<filename>)
+# Unique configuration in server would be <IP>:[<directory>/]<hostname>.<filename>
+#web_scp_config_url    54.187.136.160:~/web/tracedata/xc.conf
+
+
+# Enabling vehicle data records to be uploaded into remote server (off by default)
+web_scp_vi_trace_upload_enable 1
+
+
+# Interval to upload vehicle data stream into a remote server (in seconds)
+# User should be aware of additional time due to trace file conversion and 
+# server connection establishment
+web_scp_vi_trace_upload_interval 30
+
+
+# Remote server target file URL (<IP>:[<directory>/]<filename>)
+# Upload file will be named as <IP>:[<directory>/]<hostname>[.<timestamp>].<filename>
+web_scp_vi_target_url    54.187.136.160:~/web/tracedata/trace.json
+
+
+# Enabling to overwrite remote server target file (on by default)
+# Otherwise, YYMMDDhhmmss timestamp will be added to target file name
+# web_scp_target_overwrite_enable 1
+
+
+# Auto upgrade version URL (<IP>:[<directory>/]<filename>)
+#   where None means Auto Upgrade is disable (off by default)
+# The provided file contains latest version and its associated upgraded package as
+#   <version>
+#   <package>
+#web_scp_sw_latest_version_url    54.187.136.160:~/web/release/xcmodem-upgrade.version
+
+
+# WAN Upgrade 
+web_scp_sw_latest_version_url    54.187.136.160:~/web/release/xc-upgrade.version
+
+
+# LAN Upgrade only for V2X in Topology 3
+v2x_lan_scp_sw_latest_version_url	20.0.0.1:/tmp/upgrade.ver
+
+
+# Enabling Firmware Factory Reset Button support (on by default)
+fw_factory_reset_enable 1
+
+
+# Power saving mode : performance | normal | saving (normal by default)
+# power_saving_mode    normal
+
+# LED brightness level : [0..255]
+# By default: 255|128|0 for performance|normal|saving power_saving_mode respectively
+led_brightness 255
+
+
+# Interval to log GPS Acquire Current Position into /var/log/xcmodem.gps (in seconds)
+#gps_log_interval 10
+
+
+# Enabling GPS module - on/off by default for modem/v2x board
+#gps_enable 0
+
+
+# Enabling GSM module - on/off by default for modem/v2x board
+#gsm_enable 0
+
+
+#******************
+# V2X Trace options
+#******************
+
+# Vehicle data stream trace recording snapshot duration (in seconds)
+openxc_v2x_trace_snapshot_duration 40
+
+
+# Idle duration between subsequent Vehicle data trace recording snapshot (in seconds)
+openxc_v2x_trace_idle_duration 20
+
+
+#************
+# RSU options
+#************
+
+# Duration control for RSU snapshot in V2X and RSU
+openxc_xcV2Xrsu_trace_snapshot_duration 100
+
+
+# Interval control between RSU snapshots
+openxc_xcV2Xrsu_trace_idle_duration 110
+
+
+
+# Remote server target file URL for RSU data (<IP>:[<directory>/]<filename>)
+# Upload file will be named as <IP>:[<directory>/]<hostname>[.<timestamp>].<filename>
+web_scp_xcV2Xrsu_target_url    54.187.136.160:~/web/tracedata/xcV2Xrsu_trace.json
+
+
+# Interval between web upload
+web_scp_xcV2Xrsu_trace_upload_interval 200
+
+
+# Enable/Disable control fpor web upload of RSU log
+web_scp_xcV2Xrsu_trace_upload_enable 1
+
+
+# Control for interval between RSU identification message broadcast
+openxc_xcV2Xrsu_msg_send_interval 20
+
+
+#*************************************************************
+# Recommend not to make any changes to the configuration below
+#*************************************************************
+
+# IP Address for the xc_modem device when it acts as an AP
+xcmodem_ip_addr 20.0.0.1
+
+
+#*************************
+# COHDA Channel parameters
+#*************************
+
+# Transmit power for cohda radio. Default is 2.
+#chd_txpower 2
+
+
+# Radio to be used for the Cohda module. Radio a or b. Default is a.
+#chd_radio a
+
+
+# Antenna(s) to be used for radio, 1, 2, or 3. Default is 3
+#chd_antenna 3
+
+
+# 802.11p Channel to be use. 
+# Channel could be (172, 174, 176, 180, 182, 184) for 10 MHz channels
+# Channel could be (175, 181) for 20MHz Channel. All these channels are SCH
+# Default is 184
+#chd_chan_no 184
+
+
+# Moudlation scheme for Cohda.
+# Possible values are:
+# MK2MCS_R12BPSK | MK2MCS_R34BPSK | MK2MCS_R12QPSK
+# MK2MCS_R34QPSK | MK2MCS_R12QAM16 | MK2MCS_R34QAM16 | MK2MCS_R23QAM64
+# MK2MCS_R34QAM64 | MK2MCS_DEFAULT | MK2MCS_TRC
+# Default value is MK2MCS_R12QPSK
+#chd_modulation MK2MCS_R12QPSK
+
+
+# Flag to update the cohda channel parameters from the config parameters during the application run
+# Default is 0
+#chd_ch_update_enable 0

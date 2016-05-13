@@ -1,0 +1,22 @@
+-- Start up scripts 
+
+btrestart 		: invoked in /etc/init.d/rc.local 
+charger_config.py 	: invoked in ioenable for MODEM-DVT & V2X 
+cohda_setup.sh 		: invoked in /etc/init.d/rc.local 
+cw_llc_restart.sh 	: invoked in python 
+device_maptable.sh 	: invoked in cohda_setup.sh 
+dfu_download 		: invoked in ioenable for V2X board 
+hci_on 			: invoked in /etc/init.d/rc.local 
+hsdpa_connect 		: as /etc/chatscripts/hsdpa_connect for pppd 
+ioenable 		: invoked in /etc/init.d/rc.local 
+pppd_script 		: as /etc/pppd_script for pppd 
+rc.local 		: as /etc/rc.local 
+usb_otg.sh 		: invoked in usbotg.sh 
+usbotg.sh 		: invoked in ioenable 
+wifi_alert.sh		: invoked in /etc/profile 
+wifi_led 		: invoked in wifiled.sh 
+wifi_status_modem 	: invoked in wifistatus.sh 
+wifi_status_v2x_rsu	: invoked in wifistatus.sh 
+wifiled.sh 		: invoked in ioenable 
+wifistatus.sh 		: invoked in ioenable
+wpa_script     		: invoked in /etc/init.d/rc.local

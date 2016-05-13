@@ -1,0 +1,50 @@
+#!/bin/bash
+# $Rev: 1 $
+
+
+wlan0_search=`cat /proc/net/dev | grep -m 1 wlan0 | wc -l`
+if [ -e /root/OpenXCAccessory/common/.xcmodem_boardid ]; then
+	id=`cat /root/OpenXCAccessory/common/.xcmodem_boardid`
+	top=`cat /root/OpenXCAccessory/common/xcmodem_topology`
+	if [ $wlan0_search -eq 1 -a $id -eq 1 ]; then
+		/usr/sbin/iw phy0 interface add wlan1 type managed
+		sleep 1
+		ifconfig wlan1 20.0.0.1 netmask 255.255.255.0 up
+		sleep 1
+		/usr/local/bin/hostapd /etc/hostapd.conf &
+		sleep 1
+		/usr/sbin/udhcpd /etc/udhcpd.conf
+		sleep 1
+		iptables -t nat -A POSTROUTING -o wlan1 -j MASQUERADE
+		sleep 1
+		ifconfig wlan0 up
+		sleep 2
+		/usr/local/sbin/wpa_supplicant -Dnl80211 -c/etc/wpa_supplicant_modem.conf -iwlan0 -B
+		sleep 5
+		dhclient wlan0
+		sleep 5
+		udhcpc -R -b -p /var/run/udhcpc.wlan0.pid -i wlan0
+		sleep 2
+		echo 1 > /proc/sys/net/ipv4/ip_forward
+	fi
+	
+	# Enable OpenXC-V2X-Accessory Wi-Fi config	
+	if [ $wlan0_search -eq 1 -a $id -eq 2 -a $top -eq 3 ]; then
+		/usr/local/sbin/wpa_supplicant -Dnl80211 -c/etc/wpa_supplicant_v2x.conf -iwlan0 -B
+		sleep 2
+		dhclient wlan0
+	else
+		if [ $wlan0_search -eq 1 -a $id -eq 2 -a $top -eq 2 ]; then
+			/usr/local/sbin/wpa_supplicant -Dnl80211 -c/etc/wpa_supplicant_v2x_top2.conf -iwlan0 -B
+                	sleep 2
+                	dhclient wlan0
+		fi
+	fi
+
+	# Enable OpenXC-V2X-RSU Wi_Fi config
+	if [ $wlan0_search -eq 1 -a $id -eq 3 ]; then
+                /usr/local/sbin/wpa_supplicant -Dnl80211 -c/etc/wpa_supplicant_rsu.conf -iwlan0 -B
+                sleep 2
+                dhclient wlan0
+	fi
+fi

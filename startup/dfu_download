@@ -1,0 +1,37 @@
+#!/bin/bash
+# $Rev: 164 $
+
+echo "MK5 LLC Firmware Download"
+
+llc_firmware=/lib/firmware/SDRMK5Dual.bin
+
+wait_for_usb_device() {
+    device=$1
+    max_attempt=3
+    cnt=1
+    while [ $cnt -le $max_attempt ]
+        do
+            lsusb | grep "$device"
+            if [ "$?" -eq 0 ] ; then return 0; fi
+            cnt=$[$cnt+1]
+            sleep 1
+        done
+    return 1
+}
+
+lsusb | grep "1fc9:0103"
+if [ "$?" -eq 0 ] ; then echo "LLC USB device already had FW download"; exit 0; fi
+
+wait_for_usb_device 1fc9:0102
+if [ "$?" -ne 0 ] ; then echo "SAF510x DFU device failed to appear error "; exit 1; fi
+
+# Load image using DFU
+dfu-util -d 1fc9:0102 -D $llc_firmware -R
+if [ "$?" -ne 0 ] ; then echo "dfu-util download error "; exit 1; fi
+
+# wait to make sure LLC USB device is present so we don't try
+# and then do cal etc when it is not
+wait_for_usb_device 1fc9:0103
+if [ "$?" -ne 0 ] ; then echo "LLC USB device failed to appear error "; exit 1; fi
+
+exit 0

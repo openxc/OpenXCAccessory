@@ -1,0 +1,69 @@
+#!/bin/bash
+# $Rev: 430 $
+
+set +x
+
+dhcp_release_renew() {
+	dhclient -r wlan0
+	dhclient wlan0
+	sleep 10
+}
+
+while true
+do
+	sleep 10
+	wlan0_search=`cat /proc/net/dev | grep wlan0 | wc -l`
+	
+	if [ $wlan0_search -eq 1 ]; then
+		# CHECK FOR IP ADDRESS
+		ip_addr=`ifconfig wlan0 2>/dev/null | grep -m 1 inet\ addr | wc -l`
+
+		# CHECK IF WIFI CONNECTED
+		wifi_connected=`iw wlan0 link 2>/dev/null | grep Connected | wc -l`
+
+		# CHECK IF WIFI IS CONNECTED BUT HAS NO IP ADDRESS
+		#inet_6=`ifconfig wlan0 2>/dev/null | grep -m 1 inet6\ addr: | wc -l`
+
+		# CHECK IF CONNECTED TO OpenXC_AP
+		OpenXC_AP_Connected=`iw wlan0 link 2>/dev/null | grep OpenXC_AP | wc -l`
+
+		# SCAN FOR OpenXC_AP access point
+		OpenXC_AP=`iw wlan0 scan 2>/dev/null | grep OpenXC_AP | wc -l`
+
+		id=`cat /root/OpenXCAccessory/common/.xcmodem_boardid`
+		top=`cat /root/OpenXCAccessory/common/xcmodem_topology`
+
+		if [ $OpenXC_AP -eq 1 -a $OpenXC_AP_Connected -eq 0 -a $id -eq 2 -a $top -eq 3 ]; then
+			echo "===>>>Reboot system in 5 seconds to establish OpenXC_AP connection."
+               		sleep 5
+			dhclient -r wlan0
+                	shutdown -r now
+		fi
+
+		if [ $OpenXC_AP_Connected -eq 1 -a $wifi_connected -eq 1 -a $ip_addr -eq 1 ]; then
+			OpenXC_AP_IP=`ifconfig wlan0 | grep -m 1 "20.0.0." | wc -l`
+			if [ $OpenXC_AP_IP -ne 1 ]; then
+				dhcp_release_renew
+			fi
+		fi
+
+		if [ $OpenXC_AP_Connected -ne 1 -a $wifi_connected -eq 1 -a $ip_addr -eq 1 ]; then
+			#dhcp_release_renew
+			check_ip=$(ip -f inet addr show dev wlan0 | sed -n 's/^ *inet *\([.0-9]*\).*/\1/p' | sed 's/\.[0-9]*$/.*/')
+			last_ip_octate=$(ip -o addr show dev wlan0 | awk '$3 == "inet" {print $4}' | sed -r 's!/.*!!; s!.*\.!!')
+			exclude_ip=$(ip -f inet addr show dev wlan0 | sed -n 's/^ *inet *\([.0-9]*\).*/\1/p' | sed 's/\.[0-9]*$/./')
+			final_exclude_ip=$exclude_ip$last_ip_octate
+			chk_host_up=`nmap -sP -T5 $check_ip --exclude $final_exclude_ip | grep -m 1 "Host is up" | wc -l`
+			#((count_host_up++))
+			if [ $chk_host_up -ne 1 ]; then
+				dhcp_release_renew
+			fi
+		#elif [ $count_host_up -eq 3 ]; then
+		#	exit 1
+		fi
+	#else
+		#echo "===>>> Reboot system in 10 seconds. Missing WLAN0 interface."
+		#sleep 10
+		#shutdown -r now
+	fi
+done

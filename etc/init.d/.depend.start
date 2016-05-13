@@ -1,0 +1,13 @@
+TARGETS = rsyslog bootlogs killprocs motd sudo dbus udhcpd single ntp ssh cron rsync bluetooth plymouth rmnologin rc.local
+INTERACTIVE =
+dbus: rsyslog
+udhcpd: rsyslog
+single: killprocs bootlogs motd
+ntp: rsyslog
+ssh: rsyslog
+cron: rsyslog
+rsync: rsyslog
+bluetooth: rsyslog dbus
+plymouth: rsyslog bluetooth dbus udhcpd bootlogs motd ntp ssh cron sudo rsync
+rmnologin: sudo rsyslog bluetooth dbus udhcpd bootlogs motd ntp ssh cron rsync
+rc.local: rsyslog bluetooth dbus udhcpd bootlogs motd ntp ssh cron sudo rsync

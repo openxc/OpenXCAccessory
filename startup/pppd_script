@@ -1,0 +1,12 @@
+debug
+lcp-echo-failure 3
+lcp-echo-interval 3
+nodetach
+connect "/usr/sbin/chat -v -f /etc/chatscripts/hsdpa_connect"
+/dev/ttyACM3
+115200
+dump
+noauth
+crtscts
+usepeerdns
+lock

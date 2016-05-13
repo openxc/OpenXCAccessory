@@ -1,0 +1,61 @@
+#!/bin/bash
+# $Rev: 430 $
+
+set +x
+
+# Use gps led for wifi led. ONLY for V2X and RSU, NOT Modem.
+
+
+while true
+do
+	wlan0_search=`cat /proc/net/dev | grep -m 1 wlan0 | wc -l`
+	board_id=`cat /root/OpenXCAccessory/common/.xcmodem_boardid`
+	if [ $wlan0_search -eq 1 ]; then
+		ip_addr=`ifconfig wlan0 | grep -m 1 inet\ addr | wc -l`
+		wifi_conn=`iw wlan0 link | grep Not\ connected. | wc -l`
+        	inet_6=`ifconfig wlan0 | grep -m 1 inet6\ addr: | wc -l`
+
+		if [ $wifi_conn -eq 0 -a $ip_addr -eq 1 ]; then
+			if [ $board_id -eq 1 ]; then
+				echo 255 > /sys/class/leds/wifi/brightness
+			else
+				echo 255 > /sys/class/leds/gps/brightness
+			fi
+			XFER=`ifconfig wlan0 $I | grep bytes`
+        		sleep 1
+        		PXFER=`ifconfig wlan0 $I | grep bytes`
+
+			if [ "$XFER" != "$PXFER" ]; then
+				if [ $board_id -eq 1 ]; then
+					echo heartbeat > /sys/class/leds/wifi/trigger
+				else
+					echo heartbeat > /sys/class/leds/gps/trigger
+				fi
+			else
+				if [ $board_id -eq 1 ]; then
+					echo none > /sys/class/leds/wifi/trigger
+					echo 255 > /sys/class/leds/wifi/brightness
+				else
+					echo none > /sys/class/leds/gps/trigger
+					echo 255 > /sys/class/leds/gps/brightness
+				fi
+			fi
+	
+		elif [ $wifi_conn -eq 1 ]; then
+			if [ $board_id -eq 1 ]; then
+				echo 0 > /sys/class/leds/wifi/brightness
+			else
+				echo 0 > /sys/class/leds/gps/brightness
+			fi
+		fi
+	else
+		if [ $board_id -eq 1 ]; then
+			echo timer > /sys/class/leds/wifi/trigger
+			sleep 2
+		else
+			echo timer > /sys/class/leds/gps/trigger
+			sleep 2
+		fi
+	
+	fi
+done

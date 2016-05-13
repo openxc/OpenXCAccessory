@@ -1,0 +1,18 @@
+#!/bin/bash
+# $Rev: 245 $
+
+dev="/dev/ttyS1"
+if [ -e /root/OpenXCAccessory/common/.xcmodem_boardid ]; then
+  id=`cat /root/OpenXCAccessory/common/.xcmodem_boardid`
+  if [ "$id" -ge "1" ]; then
+    dev="/dev/ttyUSB0"
+  fi
+fi
+
+echo "Enabling TI Chip ($dev)"
+hciattach -s 115200 $dev texas
+sleep 5
+hciattach -s 115200 $dev any
+sleep 2
+
+hciconfig hci0 sspmode disable

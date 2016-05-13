@@ -1,0 +1,135 @@
+#!/bin/sh
+# $Rev: 257 $
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+reboot_flag="/var/tmp/reboot_cnt"
+reboot_cause="/var/tmp/reboot_cause"
+modem_reboot () {
+    title=$1
+    echo "$title" > $reboot_cause
+    max_attempt=3
+    if [ -e $reboot_flag ]; then
+        cnt=`cat $reboot_flag`
+    else
+        cnt=1
+    fi
+    if [ $cnt -le $max_attempt ]; then
+        echo "$cnt attempt: $title"
+        cnt=$(($cnt + 1))
+        echo $cnt > $reboot_flag
+        reboot
+        exit 0
+    else
+        echo "$title"
+        echo "Skip reboot after max ($max_attempt) attempts!"
+    fi
+}
+
+
+# Board type
+v2x=0
+if [ -e /root/OpenXCAccessory/common/.xcmodem_boardid ]; then
+    id=`cat /root/OpenXCAccessory/common/.xcmodem_boardid`
+    v2x=$id
+#    if [ "$id" -eq "2" ]; then
+#        v2x=1
+#    fi
+fi
+
+#
+# Create proper bluetooth interface name
+#
+mac=`hcitool dev | awk '/hci0/ {print $2}'`
+id=`echo $mac | awk -F : '{print $5$6}'`
+
+if [ $v2x -eq 1 ]; then
+    prefix="OpenXC-VI-MODEM-"
+elif [ $v2x -eq 2 ]; then
+    prefix="OpenXC-VI-V2X-"
+else
+    prefix="OpenXC-VI-RSU-"
+fi
+
+hostname="$prefix$id"
+
+resolve_host() {
+    hostname=$1
+    mv /etc/hosts /etc/hosts.org
+    sed -e "s/\(127.0.1.1\s\+\)\(.*\)/\1$hostname/" < /etc/hosts.org > /etc/hosts
+}
+
+if [ `hostname` != $hostname ]
+then
+    # Update hci0 bluetooth name
+    echo "PRETTY_HOSTNAME=$hostname" > /etc/machine-info
+    config="/var/lib/bluetooth/$mac/config"
+    if [ -s $config ]; then
+        grep 'name' $config
+        if [ $? -eq 0 ]; then
+            mv -f $config $config".org"
+            sed -e "s/name \(.*\)/name $hostname/" < $config".org" > $config
+        else
+            cp -p $config $config".org"
+            echo "name $hostname" >> $config
+        fi
+    else
+        echo "name $hostname" > $config
+    fi
+    settings="/var/lib/bluetooth/$mac/settings"
+    if [ -s $settings ]; then
+        grep 'Alias' $settings
+        if [ $? -eq 0 ]; then
+            mv -f $settings $settings".org"
+            sed -e "s/Alias=\(.*\)/Alias=$hostname/" < $settings".org" > $settings
+        else
+            cp -p $settings $settings".org"
+            echo "Alias=$hostname" >> $settings
+        fi
+    else
+        echo "[General]" > $settings
+        echo "Alias=$hostname" >> $settings
+    fi
+
+    # Update hostname
+    echo $hostname > /etc/hostname
+
+    # Resolve hostname
+    grep "$hostname" /etc/hosts || resolve_host "$hostname"
+
+    modem_reboot "Reboot for hostname correction"
+fi
+
+
+#
+# Work-around for OXM-43: Telit device intermittently doesn't exist when system boot up
+# Reset 3.3V Enable pin then reboot system
+#
+telit_workaround() {
+    if ! [ -e /dev/ttyACM0 ]
+    then
+        echo 4   > /sys/class/gpio/export    # 3V3_R2_EN
+        echo out > /sys/class/gpio/pioA4/direction
+        echo 0   > /sys/class/gpio/pioA4/value
+        modem_reboot "Reboot for work-around missing Telit devices"
+    fi
+}
+
+# Telit device isn't available in V2X
+[ $v2x -eq 2 ] || [ $v2x -eq 3 ] || telit_workaround
+#[ $v2x -eq 1 ] || telit_workaround
+
+# Reset reboot info
+[ -e $reboot_flag ] || rm -f $reboot_cause
+rm -f $reboot_flag
+
+exit 0
