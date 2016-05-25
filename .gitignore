@@ -1,0 +1,2 @@
+# Ignore the backup directory until we figure out how best to handle it
+backup/
