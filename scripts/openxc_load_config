@@ -3,12 +3,12 @@
 set +x
 
 openxc_dir="/root/OpenXCAccessory"
-backup_dir="/root/config_backup"
+backup_dir="/root/OpenXCAccessory/backup/other"
 
 # If the directory doesn't exist or is empty then we have a problem and cannot restore
 if [ ! -d $backup_dir ] || [ ! "$(ls -A $backup_dir)" ]; then
 	echo "Error: $backup_dir either does not exist or is empty.  Exiting..."
-	exit
+	exit 1
 fi
 
 wpa_resp=false
@@ -31,7 +31,7 @@ if [ $first_resp = 'S' ]; then
 	fi
 elif [ $first_resp = 'q' ]; then
 	echo "Exiting..."
-	exit
+	exit 2
 else
 	# Since the default case is "all" (usually what the user will want to do)
 	wpa_resp=true
@@ -72,4 +72,4 @@ fi
 
 echo "Load completed!"
 
-exit
+exit 0

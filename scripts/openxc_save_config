@@ -3,7 +3,7 @@
 set +x
 
 openxc_dir="/root/OpenXCAccessory"
-backup_dir="/root/config_backup"
+backup_dir="/root/OpenXCAccessory/backup/other"
 
 # Since we only save one config backup if a new one is to be saved the older one will be lost
 if [ -d $backup_dir ] && [ "$(ls -A $backup_dir)" ]; then
@@ -12,7 +12,7 @@ if [ -d $backup_dir ] && [ "$(ls -A $backup_dir)" ]; then
 	read overwrite
 	if [ ! $overwrite = 'Y' ]; then
 		echo "Aborting..."
-		exit
+		exit 2
 	fi
 fi
 
@@ -36,4 +36,4 @@ done
 echo $(date) > $backup_dir/last_save
 echo "Configuration backed up to $backup_dir and timestamp recorded!"
 
-exit
+exit 0
