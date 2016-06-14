@@ -6,6 +6,9 @@ v2x/*.json
 modem/*.json
 rsu.*.json
 
+**/*.pyc # In addition to the compiled Python binaries
+**/*.cur # and the .cur files
+
 # Also all of the configuration files
 etc/wpa*
 common/xc.conf

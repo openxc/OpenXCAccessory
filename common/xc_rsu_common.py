@@ -794,7 +794,7 @@ class xcV2Xrsu:
             else:
                 stuck_cnt += 1
 
-            LOG.info("MODEM DISOVERY - %s-state = %s after %d attempt" % (self.modem_state[self.name], attempt))
+            LOG.info("MODEM DISOVERY - %s-state = %s after %d attempt" % (self,modem_state[self.name], attempt))
             attempt += 1
              
 
