@@ -10,8 +10,8 @@ web_scp_target_overwrite_enable 1
 openxc_vi_trace_snapshot_duration 10
 gps_log_interval 10
 power_saving_mode normal
-v2x_lan_scp_sw_latest_version_url 20.0.0.1:/tmp/upgrade.ver
-web_scp_sw_latest_version_url 54.187.136.160:~/web/release/xc-upgrade.version
+v2x_lan_scp_sw_latest_version_url None
+web_scp_sw_latest_version_url None
 web_scp_vi_trace_upload_enable 1
 chd_modulation MK2MCS_R12QPSK
 xcmodem_ip_addr 20.0.0.1

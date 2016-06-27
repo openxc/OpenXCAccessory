@@ -29,7 +29,7 @@ except ImportError:
     LOG.debug("pybluez library not installed, can't use bluetooth interface")
     bluetooth = None
 
-msg_count = 1000
+msg_count = 500
 vid_msg = '{"name": "vehicle_id", "value": "Connected" }'
 
 
@@ -130,9 +130,9 @@ def main(sdebug = 0, debug = 0):
                   #-------------------------------
                   if ((config_mode == 2) or (config_mode == 3)):
                     if (not xcV2Xrsu_in_queue.empty()):
-                      sdata = sdata + xcV2Xrsu_in_queue.get().replace("{}","") 
-    
-                      if (len(sdata) > 200): 
+                      sdata = sdata + xcV2Xrsu_in_queue.get().replace("{}","").strip(chr(0))     
+
+                      if (len(sdata) > 200):
                        #LOG.info("[" + sdata + "]")
                        xcV2Xrsu_data = cleanup_json(sdata)
                        if (config_mode == 2):
@@ -162,11 +162,11 @@ def main(sdebug = 0, debug = 0):
                          if xcV2Xrsu_dev.trace_enable:
                           if xcV2Xrsu_dev.fp:
                             new_xcV2Xrsu_data = xcV2Xrsu_dev.xcV2Xrsu_timestamp(xcV2Xrsu_data)
-                            LOG.info("Recd data [[ %s ]]" % xcV2Xrsu_data)
+                            #LOG.info("Recd data [[ %s ]]" % xcV2Xrsu_data)
                             xcV2Xrsu_dev.fp.write(new_xcV2Xrsu_data)
                             sdata = ""
                           else:
-                            LOG.info("RSU log file not abvailable")
+                            LOG.info("RSU log file not available")
                          xcV2Xrsu_dev.trace_raw_lock.release()
 
                     if (count == msg_count): 

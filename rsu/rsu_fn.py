@@ -34,8 +34,7 @@ class ParkingGarage:
 
  def get_status(self):
         jsonString = json.JSONEncoder().encode(
-                                          [ {},
-					  { "name":"RSU", "value": self.name},	
+					  [ { "name":"RSU", "value": self.name},	
 					  { "name": self.prefix+" Spaces_available","value": self.spaces_available},
                                           { "name": self.prefix+" Longitude","value":self.lon},
                                           { "name": self.prefix+" Latitude","value":self.lat},
@@ -46,7 +45,7 @@ class ParkingGarage:
         self.rate = random.randrange(0,20,1);
         self.count += 1
         data = json.dumps(jsonString)
-        tdata = (data.replace("}, {","}\\\0{")).replace("\\","")
+        tdata = (data.replace("}, {","}{")).replace("\\","")
 #        LOG.info("TDATA = " + tdata)
         return(tdata.replace("\"[","")).replace("]\"","")
 

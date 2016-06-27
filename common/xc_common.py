@@ -585,7 +585,6 @@ def cleanup_json(jin):
 
 #------------------------------------------------------------------
 def filter_msg(stro, fid):
-
   stro = stro.replace("}{","}[]{")
   str_arr = stro.split("[]")
 
@@ -597,6 +596,8 @@ def filter_msg(stro, fid):
    if not fid in str_arr[i]:
     #print str_arr[i]
     out_str = out_str + str_arr[i]
+   else:
+    LOG.info(" Throwing away %s" % str_arr[i])
    i=i+1
   return out_str
 
