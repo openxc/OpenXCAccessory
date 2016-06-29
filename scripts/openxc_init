@@ -7,6 +7,7 @@ if [ $# -ne 2 ]; then
 fi
 
 openxc_dir="/root/OpenXCAccessory"
+cd $openxc_dir
 
 # Start by setting --assume-unchanged on all of the config files so they will not accidentally be pushed to the server by the user
 common_files="xc.conf .xcmodem_boardid xcmodem_topology"
@@ -18,7 +19,7 @@ done
 etc_files="$(ls $openxc_dir/etc/wpa*)"
 for file in $etc_files
 do
-	git update-index --assume-unchanged $openxc_dir/etc/$file
+	git update-index --assume-unchanged $file
 done
 
 # Set boardid file contents based on the type of hardware the script is being executed on (the user must pass the type when they run this script)
@@ -46,7 +47,7 @@ fi
 
 # All .pem files need to be set to permissions level 700 or they will be refused and data cannot be sent
 echo "Setting permissions on all .pem files to 700"
-chmod 700 $openxc_dir/*/*.pem $openxc_dir/*.pem
+chmod 700 $openxc_dir/*/*.pem $openxc_dir/*.pem 2> /dev/null
 
 # Settings need to be changed to reflect changes to boardid so a reboot is needed to complete the process
 echo -n "You must reboot for these changes to take effect, reboot now (Y/n)? "
