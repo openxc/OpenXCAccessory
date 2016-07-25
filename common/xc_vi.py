@@ -1103,7 +1103,7 @@ class xcModemVi:
             LOG.info("System will be reset after Firmware Reset ...")
             cmd = "rm -fr ../backup/current; cp -pr ../backup/factory ../backup/current; \
                    cp -f ../backup/current/%s /tmp; \
-                   cd /tmp; tar xvf %s; ./xc-upgrade.sh" % (fname, fname)
+                   cd /tmp; tar xvf %s; ./xc-upgrade.sh; sudo reboot" % (fname, fname)
             # LOG.debug("issuing: " + cmd)
             if subprocess.call(cmd, shell=True):
                 LOG.debug("firmware reset fail")

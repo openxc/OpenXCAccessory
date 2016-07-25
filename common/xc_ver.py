@@ -7,7 +7,7 @@
 # openXC-Modem version
 
 
-VERSION = (2, 1, 5)
+VERSION = (2, 1, 6)
 
 __version__ = '.'.join(map(str, VERSION))
 
