@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-# $Rev:: 244           $
-# $Author:: mlgantra   $
-# $Date:: 2015-04-03 1#$
+# $Rev:: 245           				$
+# $Author:: Bruno.CostaRendon@flextronics.com   $
+# $Date:: 2016-08-15 				$
+# $Update:: Enable/Disable VI communication
 #
 # openXC-modem main function
 
