@@ -1,10 +1,12 @@
 #!/usr/bin/python
 
-# $Rev:: 244           $
-# $Author:: mlgantra   $
-# $Date:: 2015-04-03 1#$
+# $Rev:: 245           				$
+# $Author:: Bruno.CostaRendon@flextronics.com   $
+# $Date:: 2016-08-15 1 				$
+# $Update:: Enable/Disable VI communication 	$
 #
 # openXC-modem main function
+
 
 import logging
 import Queue
@@ -40,7 +42,7 @@ def main(sdebug = 0, debug = 0):
 
 
     LOG.info("OpenXCModem Embedded Software - Rev %s" % xc_ver.get_version())
-    #*************************************************************
+    #---------------------------------------
     #   check the current configuration type
     #---------------------------------------
     
@@ -50,9 +52,25 @@ def main(sdebug = 0, debug = 0):
     pairing_registration()
     vi_cleanup()
     vi_dev = xcModemVi(port_dict['vi_app']['port'], vi_in_queue, vi_out_queue, sdebug, debug)
+    vi_dev.file_discovery('xc.conf')
+    vi_status = 0
+
+
+    #-----------------------------------
+    # ensure that VI is running
+    #-----------------------------------
+    vi_status = vi_dev.vi_main();
+    while ( not vi_status)and (attempt < MAX_BRING_UP_ATTEMPT) and (conf_options['openxc_vi_enable']):
+       time.sleep(float(conf_options['openxc_vi_discovery_interval']))
+       attempt += 1
+       vi_status = vi_dev.vi_main()
+    if (conf_options['openxc_vi_enable'] == 1):
+      if (not vi_status):
+        LOG.debug("vi_app max out %d attempts" % MAX_BRING_UP_ATTEMPT)
+        sys.exit()
 
     while True:
-        if (vi_dev.vi_main()):
+        if (vi_status) or (conf_options['openxc_vi_enable'] == 0):
             if first:
                 first = 0
                 LOG.info("App Tasks ...")
@@ -74,7 +92,7 @@ def main(sdebug = 0, debug = 0):
 
                 # Modem-to-v2x Thread (start only if in config mode 3 
                 if (config_mode == 3):
-                  LOG.info("OpenXCModem : Starting m_2_v2x thread")
+                  LOG.info("Starting m_2_v2x thread")
                   if port_dict['m_2_v2x']['enable']:
                     thread = appSockThread('m_2_v2x', port_dict['m_2_v2x']['port'], modem_in_queue, modem_out_queue, modem_vi_out_queue)
                     thread.start()
@@ -106,7 +124,7 @@ def main(sdebug = 0, debug = 0):
                         vi_dev.trace_raw_lock.acquire()
                         if vi_dev.fp and vi_dev.trace_enable:
                            new = vi_dev.vi_timestamp(data)
-                           vi_dev.fp.write(new+'\n')
+                           vi_dev.fp.write(new)
                         vi_dev.trace_raw_lock.release()
                 if (config_mode == 3):
                     if (not modem_in_queue.empty()):
@@ -118,7 +136,7 @@ def main(sdebug = 0, debug = 0):
                               mb_out_queue.put(data)
                           LOG.info(data)
                           new = vi_dev.vi_timestamp(data)
-                          vi_dev.v2x_fp.write(new+'\n')
+                          vi_dev.v2x_fp.write(new)
                        vi_dev.v2x_trace_raw_lock.release()
                 else:
                     msleep(1)
@@ -134,10 +152,11 @@ def main(sdebug = 0, debug = 0):
         time.sleep(float(conf_options['openxc_vi_discovery_interval']))
         attempt += 1
         if (attempt > MAX_BRING_UP_ATTEMPT):
-            LOG.debug("vi_app max out %d attempts" % MAX_BRING_UP_ATTEMPT)
+            LOG.debug("vi_app max out %d attempts in xc_modem.py" % MAX_BRING_UP_ATTEMPT)
             break;
 
     # terminate all threads
+    LOG.info("Terminating all threads")
     for k in exit_flag.keys():
         exit_flag[k] = 1
 
