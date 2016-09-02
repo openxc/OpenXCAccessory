@@ -45,8 +45,6 @@ class ParkingGarage:
         self.rate = random.randrange(0,20,1);
         self.count += 1
         data = json.dumps(jsonString)
-        tdata = (data.replace("}, {","}{")).replace("\\","")
+        tdata = (data.replace("}, {","}\\\0{")).replace("\\","")
 #        LOG.info("TDATA = " + tdata)
-        return(tdata.replace("\"[","")).replace("]\"","")
-
-
+        return(tdata.replace("\"[","")).replace("]\"","")+chr(0)   # Adding a \0 to the end of the packet per the message format standards

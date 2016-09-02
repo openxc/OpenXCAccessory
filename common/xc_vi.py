@@ -149,6 +149,8 @@ class usbSendThread (threading.Thread):
             while not self.queue.empty():
                 try:
                     data = self.queue.get()
+                    if not data.endswith(chr(0)): # All messages need to end with \0 per the message format spec
+                        data = data + chr(0)
                     # print("%s [%s]\n" % (self.name, data))
                     # Ignore all usb write since it somehow halt vi 
                     # dongle stream !!!
@@ -1207,16 +1209,16 @@ class xcModemVi:
                 thread2 = usbSendThread("%s-Send" % self.name, self.usb, self.outQ, self.name)
             if (conf_options['openxc_vi_enable']): # connect through Bluotooth socket
                 # OXM-65 - Use Socket Recv timeout to indicate xfer stop after BT Frame failure
-   	            LOG.info("TRYING TO CONNECT VIA BT in xc_vi.py")
+   	        LOG.info("TRYING TO CONNECT VIA BT in xc_vi.py")
                 thread1 = sockRecvThread("%s-Recv" % self.name, self.socket, self.inQ, self.name, sflag = 1)
-				thread2 = sockSendThread("%s-Send" % self.name, self.socket, self.outQ, self.name)
+                thread2 = sockSendThread("%s-Send" % self.name, self.socket, self.outQ, self.name)
 				
-				# start thread
+                # start thread
                 thread1.start()
-				thread2.start()
+                thread2.start()
 
                 self.threads.append(thread1)
-				self.threads.append(thread2)
+                self.threads.append(thread2)
 
             #--------------------------------------------------
             # prepare SD card back up is more than one backup is desired

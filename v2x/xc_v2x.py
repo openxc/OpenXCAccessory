@@ -136,7 +136,7 @@ def main(sdebug = 0, debug = 0):
                   #-------------------------------
                   if ((config_mode == 2) or (config_mode == 3)):
                     if (not xcV2Xrsu_in_queue.empty()):
-                      sdata = sdata + xcV2Xrsu_in_queue.get().replace("{}","").strip(chr(0))     
+                      sdata = sdata + xcV2Xrsu_in_queue.get().replace("{}","")     
 
                       if (len(sdata) > 200):
                        xcV2Xrsu_data = cleanup_json(sdata)

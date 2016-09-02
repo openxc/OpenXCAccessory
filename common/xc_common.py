@@ -423,6 +423,8 @@ class sockDualSendThread (threading.Thread):
                      #print(" sending  %d to %s-->>>: %s" % (self.msgno,self.name,data))
                      #if not (data.find("V2X") == -1):
                       #print("==============================================")
+                     if not data.endswith(chr(0)):
+                      data = data + chr(0)
                      self.sock.send(data)
                      #if (self.name == 'mb_app'):
                      #print("%s [%s]\n" % (self.name, data))
@@ -467,6 +469,8 @@ class UdpsockSendThread (threading.Thread):
             while not self.queue.empty():
                 try:
                     data = self.queue.get()
+                    if not data.endswith(chr(0)): # If it doesn't end with a null, add one
+                        data = data+chr(0)
                     self.sock.sendto(data, ('<broadcast>',self.port))
 #                    print("%s [%s]\n" % (self.name, data))
                 except IOError as e:
@@ -585,7 +589,7 @@ def cleanup_json(jin):
 
 #------------------------------------------------------------------
 def filter_msg(stro, fid):
-  stro = stro.replace("}{","}[]{")
+  stro = stro.replace("}"+chr(0)+"{","}"+chr(0)+"[]{")
   str_arr = stro.split("[]")
 
   no=len(str_arr)
@@ -597,7 +601,7 @@ def filter_msg(stro, fid):
     #print str_arr[i]
     out_str = out_str + str_arr[i]
    else:
-    LOG.info(" Throwing away %s" % str_arr[i])
+    LOG.info(" Throwing away %s" % (str_arr[i]))
    i=i+1
   return out_str
 
