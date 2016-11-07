@@ -6,6 +6,8 @@
 #
 # openXC-modem gsm application
 
+import sys
+sys.path.append('../common')
 import argparse
 import subprocess
 import time
@@ -96,7 +98,7 @@ class xcModemGsm:
         if self.led_ctl:
             self.gsm_led.on()
         # only prep once
-        if modem_state[self.name] == app_state.PENDING: 
+        if modem_state[self.name] == app_state.PENDING:
             LOG.debug("Skip preparing " + self.name)
             return True
 
@@ -124,7 +126,8 @@ class xcModemGsm:
             self.csq_thread, self.stop_csq = loop_timer(1 - SERIAL_INTERFACE_TIMEOUT, \
                                                         gsm_csq_inquiry, self.gsm_ser1, self.debug)
 
-        apn = conf_options['web_scp_apn']
+        if apn is None:
+            apn = conf_options['web_scp_apn']
 
         attempt = 1
         cmd = 'AT+CGDCONT=1,"IP","%s"\r' % apn
@@ -132,7 +135,7 @@ class xcModemGsm:
             if self.gsm_ser.cmd_check('ATE0\r','OK') is not None:
                 if self.gsm_ser.cmd_check('AT#QSS?\r','QSS: 2') is None:
                     # default QSS mode to 2 per Telit's suggestion
-                    self.gsm_ser.cmd_check('AT#QSS=2\r','OK')   # default to mode 2 
+                    self.gsm_ser.cmd_check('AT#QSS=2\r','OK')   # default to mode 2
                     self.gsm_ser.cmd_check('AT&W0\r','OK')      # store into profile0
                     self.gsm_ser.cmd_check('AT&P0\r','OK')      # full profile0 reset in next boot
                 if self.gsm_ser.cmd_check('AT#QSS?\r','QSS: 2,0') is not None:
@@ -140,14 +143,14 @@ class xcModemGsm:
                     if self.led_ctl:
                         self.gsm_led.blink(1)    # different blink mode
                     return False
-                if self.gsm_ser.cmd_check(cmd, 'OK') is not None: 
-                    if self.gsm_ser.cmd_check('AT#SGACT?\r','SGACT: 1,0') is not None: 
+                if self.gsm_ser.cmd_check(cmd, 'OK') is not None:
+                    if self.gsm_ser.cmd_check('AT#SGACT?\r','SGACT: 1,0') is not None:
                         break
                     elif self.gsm_ser.cmd_check('AT#SGACT=1,0\r','OK') is not None:
-                        if self.gsm_ser.cmd_check('AT#SGACT?\r','SGACT: 1,0') is not None: 
+                        if self.gsm_ser.cmd_check('AT#SGACT?\r','SGACT: 1,0') is not None:
                             break;
             attempt += 1
-        if attempt > xcModemGsm.MAX_ATTEMPT:    
+        if attempt > xcModemGsm.MAX_ATTEMPT:
             LOG.error("fail to prepare " + self.name)
             return False
         else:
@@ -174,7 +177,7 @@ class xcModemGsm:
             return False
 
         LOG.debug("Starting " + self.name)
-        if modem_state[self.name] != app_state.PENDING: 
+        if modem_state[self.name] != app_state.PENDING:
             LOG.error("not yet ready to start " + self.name)
             return False
 
@@ -219,7 +222,7 @@ class xcModemGsm:
         # Tear off ppp connection
         LOG.debug("Ending " + self.name)
 
-        if modem_state[self.name] != app_state.OPERATION and not force: 
+        if modem_state[self.name] != app_state.OPERATION and not force:
             LOG.error("not yet ready to stop " + self.name)
             return False
 
@@ -250,7 +253,7 @@ class xcModemGsm:
 def gsm_test():
     if boardid_inquiry(1) > 1:    # V2X doesn't support GSM
         LOG.error("V2X doesn't support GSM")
-        exit() 
+        exit()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-apn', help='Access Point Name Entry')
@@ -283,4 +286,4 @@ def gsm_test():
 
 
 if __name__ == '__main__':
-    gsm_test() 
+    gsm_test()
