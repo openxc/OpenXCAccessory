@@ -9,6 +9,8 @@
 # Description:
 ### END INIT INFO
 
+./root/OpenXCAccessory/startup/leds_off
+
 NETDOWN=yes
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin

@@ -601,7 +601,8 @@ def filter_msg(stro, fid):
     #print str_arr[i]
     out_str = out_str + str_arr[i]
    else:
-    LOG.info(" Throwing away %s" % (str_arr[i]))
+    pass
+    #LOG.info(" Throwing away %s" % (str_arr[i]))
    i=i+1
   return out_str
 

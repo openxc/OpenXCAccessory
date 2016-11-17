@@ -1,0 +1,12 @@
+#!/bin/bash
+# $Rev: 1 $
+
+set +x
+
+
+led_path=/sys/class/leds
+
+echo none > $led_path/bt/trigger
+echo none > $led_path/gps/trigger
+echo none > $led_path/wifi/trigger
+echo none > $led_path/r2_3g/trigger
