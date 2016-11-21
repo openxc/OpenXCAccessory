@@ -9,7 +9,7 @@
 # Description:
 ### END INIT INFO
 
-./root/OpenXCAccessory/startup/leds_off
+/root/OpenXCAccessory/startup/leds_off
 
 NETDOWN=yes
 
