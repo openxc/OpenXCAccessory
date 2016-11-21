@@ -1,4 +1,4 @@
-TARGETS = mountkernfs.sh hostname.sh udev mountdevsubfs.sh hwclock.sh mountall.sh mountall-bootclean.sh mountnfs.sh mountnfs-bootclean.sh checkroot.sh urandom networking checkfs.sh mtab.sh udev-mtab bootmisc.sh uim-sysfs pppd-dns kmod checkroot-bootclean.sh plymouth-log procps
+TARGETS = fake-hwclock mountkernfs.sh hostname.sh udev mountdevsubfs.sh hwclock.sh mountall.sh mountall-bootclean.sh mountnfs.sh mountnfs-bootclean.sh checkroot.sh urandom networking checkfs.sh mtab.sh udev-mtab bootmisc.sh uim-sysfs pppd-dns kmod checkroot-bootclean.sh plymouth-log procps
 INTERACTIVE = udev checkroot.sh checkfs.sh
 udev: mountkernfs.sh
 mountdevsubfs.sh: mountkernfs.sh udev
