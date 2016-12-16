@@ -17,4 +17,4 @@ Added the following user configuration settings
 When `dweet_upload_enable` is set to '1', the Web SCP VI Trace Upload functionality is disabled automatically.
 
 
-### [Dweet Python Library - "Dweepy"](./common/dweepy)
+### [Dweet Python Library - "Dweepy"](./common/dweepy/)
