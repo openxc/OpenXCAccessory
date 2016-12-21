@@ -989,7 +989,8 @@ class xcModemVi:
 
 	buff = buff+"]"	  
 	
-	ret = dweepy.dweet_for(conf_options['dweet_thing_name'],{'trace':buff})
+	thing_name = "%s-%s" % (conf_options['dweet_thing_name_prefix'],socket.gethostname())
+        ret = dweepy.dweet_for(thing_name,{'trace':buff})
         if not ret:
 	  LOG.debug("dweet sending failed")
  
