@@ -236,6 +236,10 @@ conf_options = {
     'gps_log_interval'                        : 10,
     'gps_enable'                              : 0,    # These are mainly for emulation purpose
     'gsm_enable'                              : 0,     # production board should be correctly configured
+    
+    'dweet_enable'                            : 0,
+    'dweet_upload_interval'                   : 2,
+    'dweet_thing_name'                        : 'openXC-Accessory',      
 
      #*************************
      # V2XRSU options

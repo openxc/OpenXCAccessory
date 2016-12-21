@@ -30,6 +30,12 @@ from ota_upgrade import *
 import xc_led
 import xc_ver
 
+import fileinput
+import json
+try:
+    import dweepy
+except Exception:
+    LOG.debug('dweepy import failed')
 
 #--------------------------------------------------------------------
 # Web upload settings
@@ -268,6 +274,7 @@ class xcModemVi:
         self.v2x_trace_enable = 0
         self.stop_web_upload = None
         self.stop_v2x_web_upload = None
+	self.stop_dweet_upload = None
         self.stop_trace = None
         self.stop_monitor = None
         self.stop_button_monitor = None
@@ -784,7 +791,6 @@ class xcModemVi:
             fp.close()
         self.trace_lock.release()
 
-
     def web_upload(self, bfname, fname):
         if not os.path.exists(bfname):
             LOG.debug("No trace yet to be uploaded") 
@@ -931,6 +937,70 @@ class xcModemVi:
                 self.gsm.stop()
 
 
+#-------------------------------------------------------------------
+# Dweet functions
+#-------------------------------------------------------------------
+
+    def univ_file_read(name,mode):
+      return open(name,'rU')
+  
+    def dweet_upload(self, bfname, fname):
+
+	if not os.path.exists(bfname):
+            LOG.debug("No trace yet to be Dweeted") 
+            return
+
+        # Prep the trace file
+        self.trace_prep(bfname, fname)
+
+        # Use WiFi if applicable 
+        if not check_ping() == 0:
+            if (boardid_inquiry() > 1):
+              #LOG.info("No connection to cloud found!! Skipping upload")
+              return 
+            # Use GSM if applicable
+            if conf_options['gsm_enable']:
+            	# Create gsm instance as needed
+            	if not self.gsm_instance():
+                    return
+            	if not self.gsm.start():
+                    # No need to move on without network 
+                    if modem_state[self.gsm.name] == app_state.LOST:
+                        # Create new gsm instance to re-establishing modem connection
+                        if not self.gsm_instance(force = 1):
+                            return
+                        if not self.gsm.start():
+                            return
+                    else:
+                    	return
+	
+        self.trace_lock.acquire()
+	LOG.debug("buffering and sending dweet payload")
+	buff = ''
+	data = fileinput.input(fname,openhook=univ_file_read)
+	for idx,val in enumerate(data):
+	  if val[-1:] == '\n':
+	    val = val[:-1]
+	  if idx==0:
+	    val = '['+val
+	  else:
+	    val = ','+val
+	  buff = buff + val
+
+	buff = buff+"]"	  
+	
+	ret = dweepy.dweet_for(conf_options['dweet_thing_name'],{'trace':buff})
+        if not ret:
+	  LOG.debug("dweet sending failed")
+ 
+        self.trace_lock.release()
+
+	# Use WiFi if applicable
+        if not check_ping() == 0:
+	    # Use GSM if applicable 
+            if conf_options['gsm_enable']:
+            	# Tear off gsm connection
+            	self.gsm.stop()
 #===================================================================
 
     def conf_save(self, fname):
@@ -1247,16 +1317,34 @@ class xcModemVi:
              LOG.info("*****************************")
              LOG.info("Starting V2X Trace Log deamon")
              LOG.info("*****************************")
-             thread7, self.stop_v2x_trace = loop_timer(float(conf_options['openxc_v2x_trace_idle_duration']), \
+             # if using dweet.io, fix the snapshot and idle to 1 second, respectively
+             if (conf_options['dweet_upload_enable']):
+               thread7, self.stop_v2x_trace = loop_timer(float(1), \
+                                         self.v2x_trace_start, \
+                                         float(1), \
+                                         XCMODEM_V2X_TRACE_RAW_FILE, XCMODEM_V2X_TRACE_RAW_BK_FILE)
+             else:
+               thread7, self.stop_v2x_trace = loop_timer(float(conf_options['openxc_v2x_trace_idle_duration']), \
                                          self.v2x_trace_start, \
                                          float(conf_options['openxc_v2x_trace_snapshot_duration']), \
                                          XCMODEM_V2X_TRACE_RAW_FILE, XCMODEM_V2X_TRACE_RAW_BK_FILE)
+                                          
              self.threads.append(thread7)
 
             #---------------------------------------------------
-            # for web upload, we use the stable back up file
+            # for dweet and web upload, we use the stable back up file
+	    # For this version, Dweet and scp upload cannot be enabled simultaneously
             #---------------------------------------------------
-            if conf_options['web_scp_vi_trace_upload_enable']:
+            if conf_options['dweet_upload_enable']:
+              #if (not ((board_id == 2) and ((self.config_mode == 4) or (self.config_mode == 5)))):
+              if (not ((self.board_id == 2) and (self.config_mode == 3))):
+                if (conf_options['openxc_vi_enable']):
+		  thread4, self.stop_dweet_upload = loop_timer(float(conf_options['dweet_upload_interval']), \
+                                                    self.dweet_upload, \
+                                                    XCMODEM_TRACE_RAW_BK_FILE, XCMODEM_TRACE_FILE) 
+                  self.threads.append(thread4)
+
+	    elif conf_options['web_scp_vi_trace_upload_enable']:
               #if (not ((board_id == 2) and ((self.config_mode == 4) or (self.config_mode == 5)))):
               if (not ((self.board_id == 2) and (self.config_mode == 3))):
                 if (conf_options['openxc_vi_enable']):
