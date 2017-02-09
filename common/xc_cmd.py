@@ -8,6 +8,7 @@
 
 
 import argparse
+import json
 import time
 import re
 import sys
@@ -20,10 +21,12 @@ import xc_ver
 # For MB_APP 
 ############################
 def mb_parse_options(list, v2x):
+    # MRC - Use JSON library instead..?
+    
     # Utilize argparse for command usage information
     parser = argparse.ArgumentParser(
             description="xc modem interface command handler", prog="xcmodem mb")
-    parser.add_argument("command_type", type=str, choices=['command','modem_command', 'V2X_command'])
+    parser.add_argument("command_type", type=str, choices=['command','modem_command', 'V2X_command', 'caravan_msg', 'value'])
     if v2x == 2:
        parser.add_argument("V2X_commands", type=str, choices=['device_id', 'version','diagnostics_enable','diagnostics_disable'])
     else:

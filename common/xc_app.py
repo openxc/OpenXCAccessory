@@ -101,20 +101,20 @@ class appThread (threading.Thread):
         self.passthruQ = passthruQ
         self.passQ = passQ
         self.running = True
-        #self.v2x = boardid_inquiry() == 2 
+        #self.v2x = boardid_inquiry() == 2
         self.v2x = boardid_inquiry()
         self.threads = []
         self.firstpass = 1
 
-    
+
     def run(self):
         while not exit_flag['all_app']:
-          
+
             # OXM-72: not start until bt_restart done
             while exit_flag['bt_restart']:
                 time.sleep(1)
             LOG.debug("Starting " + self.name)
-   
+
             LOG.info("Re opening BT port")
 
             modem_state[self.name] = app_state.PENDING
@@ -127,7 +127,7 @@ class appThread (threading.Thread):
                 sdp_prep(self.port)
                 serverSock, clientSock, address = app_listening(self.name, self.port)
 
-                # OXM-72: listening socket might be timeout with exit_flag 
+                # OXM-72: listening socket might be timeout with exit_flag
                 if exit_flag[self.name]:
                     break
 
@@ -137,7 +137,7 @@ class appThread (threading.Thread):
                 cmd = "bluez-test-device list | awk '/%s/ {print $2}'" % addr
                 # LOG.debug("issuing " + cmd)
                 cmd_op = subprocess.check_output(cmd, shell=True).split()
-                if (len(cmd_op) > 0): 
+                if (len(cmd_op) > 0):
                    device = subprocess.check_output(cmd, shell=True).split()[0]
                 else:
                    device = "NOT Found"
@@ -155,7 +155,7 @@ class appThread (threading.Thread):
                 serverSock.shutdown(socket.SHUT_RDWR)
                 serverSock.close()
 
-            # OXM-72: listening socket might be timeout with exit_flag 
+            # OXM-72: listening socket might be timeout with exit_flag
             if exit_flag[self.name]:
                 LOG.debug("Ending " + self.name)
                 continue
@@ -177,12 +177,16 @@ class appThread (threading.Thread):
 
             while not exit_flag[self.name]:
                 if not self.inQ.empty():
-                    cmd = self.inQ.get()
-                    if self.name == 'mb_app':
-                        mb_process_data(self.v2x, self.name, self.passthruQ, self.passQ, cmd)
-                    elif self.name == 'md_app':
-                        md_process_data(self.v2x, self.name, self.outQ, self.passQ, cmd)
-                    set_mb_ready()
+                    # Commenting all of this out because in the caravan demo the version numbers and IDs of the connected devices are not needed
+                    # In the future this entire section should be overhauled because it does not support sending data from the phone to the V2X other than the commands hard-coded into the functions called here
+                    #cmd = self.inQ.get()
+                    #print "appThread cmd = {0}".format(cmd)
+                    #if self.name == 'mb_app':
+                    #    mb_process_data(self.v2x, self.name, self.passthruQ, self.passQ, cmd)
+                    #elif self.name == 'md_app':
+                    #    md_process_data(self.v2x, self.name, self.outQ, self.passQ, cmd)
+                    #set_mb_ready()
+                    pass
                 msleep(1)
 
              # waif for threads finish
@@ -216,10 +220,10 @@ def appSock_listening(name, port ):
     	LOG.debug("Listen on INET port %s" % port)
         serverSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     	serverSock.bind((ip_addr, port))
-       
+
     else:
         LOG.debug("Invalid SocketApp type");
-	
+
     # OXM-72: use timeout to break listening socket so we can restart bluetooth
     serverSock.settimeout(1)
     serverSock.listen(1)
@@ -258,9 +262,9 @@ class appSockThread (threading.Thread):
         self.outQ = outQ
         self.passQ = passQ
         self.running = True
-        self.v2x = boardid_inquiry() == 2 
+        self.v2x = boardid_inquiry() == 2
 
-    
+
     def run(self):
         while not exit_flag['all_app']:
             # OXM-72: not start until bt_restart done
@@ -277,16 +281,16 @@ class appSockThread (threading.Thread):
                 LOG.info("Trying to open a socket on port %s" % self.port)
                 serverSock, clientSock, address = appSock_listening(self.name, self.port)
                 if (clientSock  is not None):
-                  LOG.info("Got a non null Client address") 
+                  LOG.info("Got a non null Client address")
                   break
 
-                # OXM-72: listening socket might be timeout with exit_flag 
+                # OXM-72: listening socket might be timeout with exit_flag
                 if exit_flag[self.name]:
                     LOG.info("Found self exit flag")
                     break
 
 
-            # OXM-72: listening socket might be timeout with exit_flag 
+            # OXM-72: listening socket might be timeout with exit_flag
             if exit_flag[self.name]:
                 LOG.debug("Ending " + self.name)
                 continue

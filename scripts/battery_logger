@@ -1,0 +1,28 @@
+#!/bin/bash
+# This file records the current time and battery status of the accessory at an interval determined by cron
+
+set +x
+
+LOGFILE="/home/xplained/battery_life.log"
+BATSTAT="/sys/devices/ahb/ahb:apb/f8018000.adc/iio:device0/in_voltage3_raw"
+
+bat_val=`cat $BATSTAT`
+bat_volt=`echo - | awk -v bat_val="$bat_val" '{print (bat_val / 2048 * 3.3) + 0.04}'`
+
+if [ $# -eq 1 ]; then
+        if [ $1 == d ]; then
+                echo "`date "+%T"` | $bat_volt - SHUTDOWN" >> $LOGFILE
+		exit
+	else
+		echo "Error - Invalid argument provided"
+		exit
+	fi
+fi
+
+pidof python
+if [ $? -eq 1 ]; then
+	echo "`date "+%T"` | $bat_volt - NO PYTHON" >> $LOGFILE
+else
+	echo "`date "+%T"` | $bat_volt" >> $LOGFILE
+fi
+exit

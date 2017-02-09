@@ -54,8 +54,8 @@ def main(sdebug = 0, debug = 0):
       #------------------------------
       # Create a Garage instance
       #------------------------------
-      garage1 =  ParkingGarage(myhost + "_Garage1 ", "Garage1", 1000, -121.0, 30.0, 10)
-
+      #garage1 =  ParkingGarage(myhost + "_Garage1 ", "Garage1", 1000, -121.0, 30.0, 10)
+      garage1 =  ParkingGarage(myhost + "_Garage1", myhost + "_Garage1", 1000, -121.0, 30.0, 10)
 
     #----------------------------------------
     # RSU is up. Run the main loop
@@ -64,6 +64,7 @@ def main(sdebug = 0, debug = 0):
         if (rsu_dev.xcV2Xrsu_main()):
             while not exit_flag['rsu_2_v2x']:
                 data = garage1.get_status()
+                #print "data = %s" % data
                 LOG.info("---------------------------------------------------")
                 LOG.info("send:" + data.replace("{}",""))
                 LOG.info("---------------------------------------------------")
@@ -72,7 +73,7 @@ def main(sdebug = 0, debug = 0):
                 count = 0
                 while (count < 100) and (not xcV2Xrsu_in_queue.empty()):
                     tdata = rsu_dev.inQ.get()
-                    data = filter_msg(tdata,myhost)
+                    #data = filter_msg(tdata,myhost)	<-- TODO Delete this function definition completely once we confirm we don't need it?
                     if (len(data) > 0):
                      print("rec [%s]" % data)
                     new = rsu_dev.xcV2Xrsu_timestamp(data)

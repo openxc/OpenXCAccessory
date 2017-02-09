@@ -12,7 +12,7 @@ gps_log_interval 10
 power_saving_mode normal
 v2x_lan_scp_sw_latest_version_url None
 web_scp_sw_latest_version_url None
-web_scp_vi_trace_upload_enable 1
+web_scp_vi_trace_upload_enable 0
 chd_modulation MK2MCS_R12QPSK
 xcmodem_ip_addr 20.0.0.1
 openxc_vi_trace_truncate_size 0
@@ -22,7 +22,7 @@ web_scp_vi_target_url 54.187.136.160:~/web/tracedata/trace.json
 chd_antenna 3
 openxc_vi_trace_number_of_backup 1
 openxc_vi_trace_backup_overwrite_enable 1
-web_scp_xcV2Xrsu_trace_upload_enable 1
+web_scp_xcV2Xrsu_trace_upload_enable 0
 openxc_vi_trace_idle_duration 30
 openxc_vi_discovery_interval 10
 openxc_vi_mac 00:06:66:6F:AA:F1

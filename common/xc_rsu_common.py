@@ -802,7 +802,7 @@ class xcV2Xrsu:
 
             # create threads
             # RSU uses UDP socket as aginst BT or STREAM sockets
-            thread1 = UdpsockRecvThread("%s-Recv" % self.name, self.recv_socket, self.recv_port, self.inQ, self.name, sflag = 1)
+            thread1 = UdpsockRecvThread("%s-Recv" % self.name, self.recv_socket, self.recv_port, self.inQ, self.outQ, self.name, sflag = 1)
             thread2 = UdpsockSendThread("%s-Send" % self.name, self.send_socket, self.send_port, self.outQ, self.name)
             # start threads
             thread1.start()

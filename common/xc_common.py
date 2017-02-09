@@ -17,6 +17,8 @@ import socket
 import select
 #from rsu_fn import *
 import re
+import json # MRC for testing metadata for DSRC
+import xc_json
 
 from bluetooth.btcommon import BluetoothError
 
@@ -25,7 +27,7 @@ from bluetooth.btcommon import BluetoothError
 
 #
 # logging into /var/log/syslog
-#  
+#
 logging.basicConfig(level=logging.DEBUG)
 LOG = logging.getLogger('xcmodem')
 sh = logging.handlers.SysLogHandler(address = '/dev/log')
@@ -79,7 +81,7 @@ charge_state = Enum(['IDLE', 'NOT_CHARGE', 'PRE_CHARGE', 'FAST_CHARGE', 'CHARGE_
 
 
 #------------------------------------------------------------------
-# Use the hidden file .xcmodem_boardid to indicate the board type 
+# Use the hidden file .xcmodem_boardid to indicate the board type
 #------------------------------------------------------------------
 XCMODEM_BOARDID_FILE = '../common/.xcmodem_boardid'        # hidden file
 XCMODEM_MODE_FILE    = '../common/xcmodem_topology'        # Topology setup file
@@ -105,7 +107,7 @@ port_dict = {
     'v2x_2_m'    :{'port': 4567, 'enable': 1}, # for OpenXCModem to v2x communicaiton
 
     'xcV2Xrsu_tx':{'port': 7777, 'enable': 1}, # for xcV2Xrsu Trasnmist
-    'xcV2Xrsu_rx':{'port': 7777, 'enable': 1}, # for xcV2Xrsu receive 
+    'xcV2Xrsu_rx':{'port': 7777, 'enable': 1}, # for xcV2Xrsu receive
 
 #    'v2x_2_rsu' :{'port': 7777, 'enable': 1}, # for v2x  to rsu communicaiton
 #    'rsu_2_v2x' :{'port': 7777, 'enable': 1}, # for rsu  to v2x communicaiton
@@ -121,11 +123,11 @@ mb_status = {
    'modem_version_sent'    : False,            # for OpenXCModem PC Application
    'v2x_id_sent'           : False,            # for OpenXCModem Mobile Application
    'v2x_version_sent'      : False,            # for OpenXCModem PC Application
-   'ready'	            : False
+   'ready'              : False
 }
 
 #------------------------------------------------------------------
-# VI data stream pass-thru mode 
+# VI data stream pass-thru mode
 #------------------------------------------------------------------
 vi_bypass = {
     'mb_app'        : True,            # for OpenXCModem Mobile Application
@@ -135,7 +137,7 @@ vi_bypass = {
 }
 
 #------------------------------------------------------------------
-# VI Passthru support nable flag 
+# VI Passthru support nable flag
 #------------------------------------------------------------------
 passthru_enable = {
     'mb_app': 1,                # for OpenXCModem Mobile Application
@@ -199,11 +201,11 @@ modem_state = {
 # Configuration File dictionary
 #------------------------------------------------------------------
 conf_options = {
-    'openxc_modem_mac'     		      : 'None',
+    'openxc_modem_mac'                : 'None',
 #    'openxc_md_mac'                           : 'None',                   # only appliable for V2X
     'openxc_md_enable'                        : 1,                     # 1/0 by default for Modem/V2X
     'openxc_vi_mac'                           : 'None',
-    'openxc_vi_enable'                        : 1, 
+    'openxc_vi_enable'                        : 1,
 
     'openxc_vi_trace_snapshot_duration'       : 10,
     'openxc_v2x_trace_snapshot_duration'      : 10,
@@ -215,7 +217,7 @@ conf_options = {
     'openxc_vi_trace_backup_overwrite_enable' : 0,
     'openxc_vi_discovery_interval'            : 10,
     'web_scp_userid'                          : 'ubuntu',
-    'v2x_lan_scp_userid'		      : 'root',
+    'v2x_lan_scp_userid'              : 'root',
 #    'web_scp_pem'                             : 'xcmodem.pem',
     'web_scp_pem'                             : 'xc_scp.pem',
     'web_scp_apn'                             : 'apn',
@@ -248,7 +250,7 @@ conf_options = {
     'web_scp_xcV2Xrsu_trace_upload_enable'    : 1,   # control variable for web upload
     'openxc_xcV2Xrsu_msg_send_interval'       : 20,  # interval between RSU messages being sent out
     'xcmodem_ip_addr'                         : '20.0.0.1',     # i Address for the xc_modem device
-    
+
      #*************************
      # COHDA Channel parameters
      #*************************
@@ -259,11 +261,11 @@ conf_options = {
     'chd_chan_no'          : 184, # channel no coud be (172, 174, 176, 180, 182, 184) for 10 MHz channels
                                # or (175, 181) for 20MHz Channel. All these channels are SCH
                                # default is 184
-    'chd_modulation'       : 'MK2MCS_R12QPSK', # possible values - "MK2MCS_R12BPSK | MK2MCS_R34BPSK | MK2MCS_R12QPSK 
-                               # | MK2MCS_R34QPSK | MK2MCS_R12QAM16 | MK2MCS_R34QAM16 | MK2MCS_R23QAM64 
-                               # | MK2MCS_R34QAM64 | MK2MCS_DEFAULT | MK2MCS_TRC" 
+    'chd_modulation'       : 'MK2MCS_R12QPSK', # possible values - "MK2MCS_R12BPSK | MK2MCS_R34BPSK | MK2MCS_R12QPSK
+                               # | MK2MCS_R34QPSK | MK2MCS_R12QAM16 | MK2MCS_R34QAM16 | MK2MCS_R23QAM64
+                               # | MK2MCS_R34QAM64 | MK2MCS_DEFAULT | MK2MCS_TRC"
     'chd_ch_update_enable' : 0
-   
+
 }
 
 #------------------------------------------------------------------
@@ -291,7 +293,7 @@ vi_conn = {
 # gps information
 #------------------------------------------------------------------
 gps_dict = {
-    'utc' : None, 
+    'utc' : None,
     'date': None,
     'lat' : None,
     'lon' : None,
@@ -411,7 +413,8 @@ class sockDualSendThread (threading.Thread):
             while (not self.queue.empty()) or (not self.cmdQ.empty()) :
                 try:
                     data = None
-                    if (mb_status['ready']):
+                    #if (mb_status['ready']):
+                    if (True): # MRC - Temporary change because version numbers aren't being passed around during the demo
                        data = self.queue.get()
                     else:
                       if not self.cmdQ.empty():
@@ -420,7 +423,7 @@ class sockDualSendThread (threading.Thread):
                      self.msgno = self.msgno + 1
                      #if not (data.find("V2X") == -1):
                       #print("==============================================")
-                     #print(" sending  %d to %s-->>>: %s" % (self.msgno,self.name,data))
+                     print(" sending  %d to %s-->>>: %s" % (self.msgno,self.name,data))
                      #if not (data.find("V2X") == -1):
                       #print("==============================================")
                      if not data.endswith(chr(0)):
@@ -479,25 +482,27 @@ class UdpsockSendThread (threading.Thread):
                     break
             msleep(1)
         LOG.debug("disconnected " + self.name)
+
 #------------------------------------------------------------------
 class UdpsockRecvThread (threading.Thread):
-    def __init__(self, name, socket, port, queue, eflag, sflag = 0):
+    def __init__(self, name, socket, port, recv_queue, send_queue, eflag, sflag = 0):
         threading.Thread.__init__(self)
         self.name = name
         self.sock = socket
-        self.queue = queue
+        self.recv_queue = recv_queue
+        self.send_queue = send_queue
         self.eflag = eflag
         self.sflag = sflag
         self.port = port
+        self.mac = xc_json.get_mac()
     def run(self):
         LOG.debug("Starting " + self.name)
         #self.sock.settimeout(1)
         while not exit_flag[self.eflag]:
+            data = None
             try:
                 result = select.select([self.sock],[],[])
                 data = result[0][0].recv(1024)
-                self.queue.put(data)
-                
             except BluetoothError as e:
                 if e.args[0] == 'timed out':
                     if not self.sflag:
@@ -506,6 +511,27 @@ class UdpsockRecvThread (threading.Thread):
                 else:
                     LOG.debug("%s %s" % (self.name, e))
                 break
+            if not data is None:
+                data_dict = xc_json.JSON_msg_decode(data)  # Use our DSRC message decoder to break the message into a dictionary
+                if "meta" in data_dict:  # If the dictionary contains a "meta" key then we can check forwarder and source
+                    meta_dict = data_dict["meta"]
+                    if ("forwarder" in meta_dict and not meta_dict["forwarder"] == self.mac) and ("source" in meta_dict and not meta_dict["source"] == self.mac):  # If the "forwarder" is not equal to my mac address
+                        pass_status = xc_json.JSON_pass_logic(data) # <-- TODO: pass_logic should support passing the dictionary so we don't decode it twice
+                        if pass_status == 3:  # If time to live and/or hops to live not excedded
+                            self.recv_queue.put(data)
+                            # Update metadata
+                            meta_dict["hops"] = meta_dict["hops"] + 1
+                            meta_dict["forwarder"] = self.mac
+                            self.send_queue.put(json.JSONEncoder().encode(data_dict))   # Not using the DSRC_encode function so the timestamp will be preserved.. if desired an overide could be added to the function to keep things consistent
+                        elif pass_status == 2:
+                            self.recv_queue.put(data)
+                        elif pass_status == 1:
+                            pass # This is the case where we pass the data along but don't keep it ourselves (for later when we have addressed messages)
+                # Otherwise just return the original json packet
+                    elif "forwarder" not in meta_dict or "source" not in meta_dict:
+                        self.recv_queue.put(data)
+                else:
+                    self.recv_queue.put(data)
         LOG.debug("disconnected " + self.name)
 
 #------------------------------------------------------------------
@@ -522,7 +548,6 @@ def loop_timer(interval, function, *args, **kwargs):
     t.daemon = True
     t.start()
     return t, stop_event
-
 
 #------------------------------------------------------------------
 def pairing_registration():
@@ -562,17 +587,16 @@ def boardmode_inquiry(debug = 0):
         LOG.info("Board " + board_type[id]['type'])
     return id
 
-
 #------------------------------------------------------------------
 def modem_sock_inquiry():
     flag = 0;
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-    	s.connect(('192.168.1.10', 4567))
+        s.connect(('192.168.1.10', 4567))
         flag = 1
-   	LOG.info("191:168.1.10:Port 4567 reachable")
+        LOG.info("191:168.1.10:Port 4567 reachable")
     except socket.error as e:
-    	LOG.info("Error on connect 191:168.1.10 on port 4567:: %s" % e)
+        LOG.info("Error on connect 191:168.1.10 on port 4567:: %s" % e)
     s.close()
     return flag
 
@@ -585,7 +609,6 @@ def cleanup_json(jin):
       return jout.group(0)
     else:
       return None
-
 
 #------------------------------------------------------------------
 def filter_msg(stro, fid):
@@ -618,8 +641,8 @@ COHDA_FW_PATH             =  '/lib/firmware/SDRMK5Dual.bin'
 allowed_channels     = set([172, 174, 176, 180, 182, 184, 175, 181])
 allowed_radios       = set(['a', 'b'])
 allowed_antenna      = set(['1', '2', '3'])
-allowed_txpower_low    = -10 
-allowed_txpower_high   = 10 
+allowed_txpower_low    = -10
+allowed_txpower_high   = 10
 allowed_modulation   = set(['MK2MCS_R12BPSK' , 'MK2MCS_R34BPSK' ,'MK2MCS_R12QPSK', 'MK2MCS_R34QPSK', \
                             'MK2MCS_R12QAM16' , 'MK2MCS_R34QAM16',  'MK2MCS_R23QAM64', 'MK2MCS_R34QAM64',\
                             'MK2MCS_DEFAULT', 'MK2MCS_TRC'])
@@ -638,7 +661,7 @@ def cohda_link_setup(chd_mac_addr):
 
    llc_path = "/root/cohda/app/llc"
    llc_cmd = "/root/cohda/app/llc/llc"
-   
+
    # verify the options
    if (not chd_chan_no in allowed_channels):
       LOG.info("Illegal channel specification for 802.11p in config file : %d " % chd_chan_no)
@@ -653,17 +676,17 @@ def cohda_link_setup(chd_mac_addr):
    if (not chd_modulation in allowed_modulation):
       LOG.info("illegal modulation type specified in the config file %s " % chd_modulation)
       LOG.info("setting the modulation to default value MK2MCS_R12QPSK")
-      chd_modulation = 'MK2MCS_R12QPSK' 
+      chd_modulation = 'MK2MCS_R12QPSK'
 
    if (not chd_antenna in allowed_antenna):
       LOG.info("illegal antenna type specified in the config file %s " % chd_antenna)
       LOG.info("setting the modulation to default value 3")
-      chd_antenna = '3' 
+      chd_antenna = '3'
 
    if (not ((chd_txpower < allowed_txpower_high) and (chd_txpower > allowed_txpower_low))):
       LOG.info("illegal power type specified in the config file %s " % chd_txpower)
       LOG.info("setting the modulation to default value 3")
-      chd_txpower = '-10' 
+      chd_txpower = '-10'
 
 
    # issue the command
