@@ -16,7 +16,7 @@ vehicles = [] # General inforamtion about nearby vehicles
 my_caravan = {"id": None, "pretty": None, "members": {}} # Information about the caravan this V2X is a part of
 host_caravan = {"status": FREE, "id": None, "pretty": None, "protected": False, "pw": None, "count": 1, "max": 5, "members": None} # Backend information about the caravan (only used by hosts)
 caravans = {} # Information about nearby caravans which are advertising
-status = {"MODE": None, "STATE": IDLE} # Method of tracking whether this V2X belongs to a host or a member (MODE) and what stage it is operating in (STATE)# Converts the "pretty" name for a caravan to the MAC of the V2X unit associated with it
+status = {"MODE": None, "STATE": SEARCH} # Method of tracking whether this V2X belongs to a host or a member (MODE) and what stage it is operating in (STATE)# Converts the "pretty" name for a caravan to the MAC of the V2X unit associated with it
 
 def caravan_pretty2mac(pretty):
     global caravans
